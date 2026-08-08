@@ -1,16 +1,44 @@
+// Screens/Login.tsx
 import { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, TextInput } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { StyleSheet, Text, TouchableOpacity, View, TextInput, Alert } from 'react-native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../FirebaseConfig';
+import { RootStackParamList } from '../App';
+
+type LoginNavigationProp = NavigationProp<RootStackParamList, 'Login'>;
 
 export default function Login() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<LoginNavigationProp>();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [entrando, setEntrando] = useState(false);
 
-  const handleLogin = () => {
-    navigation.navigate('Home' as never);
-  };
+  async function handleLogin() {
+    if (!email || !senha) {
+      Alert.alert('Atenção', 'Preencha e-mail e senha.');
+      return;
+    }
+
+    try {
+      setEntrando(true);
+      await signInWithEmailAndPassword(auth, email.trim(), senha);
+      navigation.navigate('Home');
+    } catch (error: any) {
+      let mensagem = 'Não foi possível entrar.';
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        mensagem = 'E-mail ou senha incorretos.';
+      } else if (error.code === 'auth/user-not-found') {
+        mensagem = 'Usuário não encontrado.';
+      } else if (error.code === 'auth/invalid-email') {
+        mensagem = 'E-mail inválido.';
+      }
+      Alert.alert('Erro', mensagem);
+    } finally {
+      setEntrando(false);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -29,6 +57,8 @@ export default function Login() {
             value={email}
             onChangeText={setEmail}
             style={styles.input}
+            autoCapitalize="none"
+            keyboardType="email-address"
           />
         </View>
 
@@ -48,20 +78,15 @@ export default function Login() {
         <Text style={styles.esqueciSenha}>Esqueci minha senha</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.botao}
-        onPress={() => {
-          console.log('CLICOU');
-          handleLogin();
-        }}
-      >
-        <Text style={styles.textoBotao}>Entrar</Text>
+      <TouchableOpacity style={styles.botao} onPress={handleLogin} disabled={entrando}>
+        <Text style={styles.textoBotao}>{entrando ? 'Entrando...' : 'Entrar'}</Text>
       </TouchableOpacity>
 
-      <Text style={styles.criarConta}>
-        Não tem conta?{' '}
-        <Text style={styles.criarContaLink}>Criar conta</Text>
-      </Text>
+      <TouchableOpacity onPress={() => navigation.navigate('CriarConta')}>
+        <Text style={styles.criarConta}>
+          Não tem conta? <Text style={styles.criarContaLink}>Criar conta</Text>
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
