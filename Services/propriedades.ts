@@ -1,17 +1,4 @@
-// Services/propriedades.ts
-import {
-  collection,
-  addDoc,
-  getDocs,
-  getDoc,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  serverTimestamp,
-  writeBatch,
-} from 'firebase/firestore';
+import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where, serverTimestamp, writeBatch,} from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 
 export interface Propriedade {
@@ -49,11 +36,11 @@ export async function atualizarPropriedade(id: string, dados: Partial<Omit<Propr
 }
 
 export async function excluirPropriedade(id: string) {
-  // busca todos os talhões vinculados a essa propriedade
+
   const talhoesQuery = query(collection(db, 'talhoes'), where('propriedadeId', '==', id));
   const talhoesSnapshot = await getDocs(talhoesQuery);
 
-  // exclui propriedade + todos os talhões numa única operação atômica
+
   const batch = writeBatch(db);
   batch.delete(doc(db, 'propriedades', id));
   talhoesSnapshot.docs.forEach((talhaoDoc) => {

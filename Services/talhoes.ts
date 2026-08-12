@@ -1,15 +1,5 @@
-// Services/talhoes.ts
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  serverTimestamp,
-} from 'firebase/firestore';
+
+import {collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, serverTimestamp,} from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 
 export interface Talhao {

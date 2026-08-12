@@ -1,14 +1,5 @@
-// Screens/TalhaoForm.tsx
 import { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { criarTalhao, atualizarTalhao, listarTalhoes } from '../Services/talhoes';
@@ -36,7 +27,7 @@ export default function TalhaoForm() {
 
   async function carregarDados() {
     try {
-      // busca todos os talhões da propriedade e filtra o que estamos editando
+
       const talhoes = await listarTalhoes(propriedadeId);
       const talhao = talhoes.find((t) => t.id === talhaoId);
       if (talhao) {
