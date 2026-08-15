@@ -153,6 +153,17 @@ export default function PropriedadeDetalhe() {
           )}
         />
       )}
+
+      <View style={styles.despesasHeader}>
+        <Text style={styles.talhoesTitulo}>Despesas</Text>
+        <TouchableOpacity
+          style={styles.botaoNovo}
+          onPress={() => navigation.navigate('DespesaForm', { propriedadeId })}
+        >
+          <Feather name="plus" size={14} color="#fff" />
+          <Text style={styles.botaoNovoTexto}>Nova despesa</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -238,5 +249,12 @@ const styles = StyleSheet.create({
   talhaoAcoes: {
     flexDirection: 'row',
     gap: 14,
+  },
+  despesasHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 12,
   },
 });
