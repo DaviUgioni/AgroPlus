@@ -42,7 +42,7 @@ export default function PropriedadeDetalhe() {
   );
 
   function handleExcluirPropriedade() {
-    Alert.alert('Excluir propriedade', 'Tem certeza? Isso não apaga os talhões automaticamente.', [
+    Alert.alert('Excluir propriedade', 'Tem certeza? Todos os talhões vinculados também serão excluídos.', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir',
@@ -94,7 +94,7 @@ export default function PropriedadeDetalhe() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <View>
           <Text style={styles.nome}>{propriedade.nome}</Text>
@@ -102,13 +102,19 @@ export default function PropriedadeDetalhe() {
             {propriedade.localizacao} · {propriedade.areaTotal} ha
           </Text>
         </View>
+
         <View style={styles.headerAcoes}>
           <TouchableOpacity
+            style={styles.acaoBotao}
             onPress={() => navigation.navigate('PropriedadeForm', { propriedadeId })}
           >
             <Feather name="edit-2" size={18} color="#666" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleExcluirPropriedade}>
+
+          <TouchableOpacity
+            style={styles.acaoBotao}
+            onPress={handleExcluirPropriedade}
+          >
             <Feather name="trash-2" size={18} color="#c0392b" />
           </TouchableOpacity>
         </View>
@@ -116,36 +122,59 @@ export default function PropriedadeDetalhe() {
 
       <View style={styles.talhoesHeader}>
         <Text style={styles.talhoesTitulo}>Talhões</Text>
-        <TouchableOpacity
-          style={styles.botaoNovo}
-          onPress={() => navigation.navigate('TalhaoForm', { propriedadeId })}
-        >
-          <Feather name="plus" size={14} color="#fff" />
-          <Text style={styles.botaoNovoTexto}>Novo talhão</Text>
-        </TouchableOpacity>
       </View>
 
       {talhoes.length === 0 ? (
-        <Text style={styles.vazio}>Nenhum talhão cadastrado ainda.</Text>
+        <View>
+          <Text style={styles.vazio}>Nenhum talhão cadastrado ainda.</Text>
+
+          <TouchableOpacity
+            style={styles.botaoNovoTalhao}
+            onPress={() => navigation.navigate('TalhaoForm', { propriedadeId })}
+          >
+            <Feather name="plus" size={16} color="#fff" />
+            <Text style={styles.botaoNovoTexto}>Novo talhão</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={talhoes}
           keyExtractor={(item) => item.id!}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listaTalhoes}
+          ListFooterComponent={
+            <TouchableOpacity
+              style={styles.botaoNovoTalhao}
+              onPress={() => navigation.navigate('TalhaoForm', { propriedadeId })}
+            >
+              <Feather name="plus" size={16} color="#fff" />
+              <Text style={styles.botaoNovoTexto}>Novo talhão</Text>
+            </TouchableOpacity>
+          }
           renderItem={({ item }) => (
             <View style={styles.talhaoItem}>
               <View>
                 <Text style={styles.talhaoNome}>{item.nome}</Text>
                 <Text style={styles.talhaoInfo}>{item.area} ha</Text>
               </View>
+
               <View style={styles.talhaoAcoes}>
                 <TouchableOpacity
+                  style={styles.acaoBotao}
                   onPress={() =>
-                    navigation.navigate('TalhaoForm', { propriedadeId, talhaoId: item.id })
+                    navigation.navigate('TalhaoForm', {
+                      propriedadeId,
+                      talhaoId: item.id,
+                    })
                   }
                 >
                   <Feather name="edit-2" size={16} color="#666" />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleExcluirTalhao(item.id!)}>
+
+                <TouchableOpacity
+                  style={styles.acaoBotao}
+                  onPress={() => handleExcluirTalhao(item.id!)}
+                >
                   <Feather name="trash-2" size={16} color="#c0392b" />
                 </TouchableOpacity>
               </View>
@@ -156,6 +185,7 @@ export default function PropriedadeDetalhe() {
 
       <View style={styles.despesasHeader}>
         <Text style={styles.talhoesTitulo}>Despesas</Text>
+
         <TouchableOpacity
           style={styles.botaoNovo}
           onPress={() => navigation.navigate('DespesaForm', { propriedadeId })}
@@ -172,62 +202,97 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingBottom: 30,
   },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginTop: 12,
-    marginBottom: 20,
+    marginTop: 16,
+    marginBottom: 24,
   },
+
   nome: {
     fontSize: 20,
     fontWeight: '500',
   },
+
   info: {
     fontSize: 13,
     color: '#666',
     marginTop: 2,
   },
+
   headerAcoes: {
     flexDirection: 'row',
-    gap: 16,
+    alignItems: 'center',
+    gap: 18,
   },
+
+  acaoBotao: {
+    padding: 5,
+  },
+
   talhoesHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
+
   talhoesTitulo: {
     fontSize: 15,
     fontWeight: '500',
   },
+
+  botaoNovoTalhao: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3B6D11',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginTop: 2,
+    marginBottom: 15,
+    gap: 6,
+  },
+
   botaoNovo: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#3B6D11',
-    borderRadius: 20,
-    paddingVertical: 6,
+    borderRadius: 10,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     gap: 5,
   },
+
   botaoNovoTexto: {
     color: '#fff',
     fontSize: 12,
     fontWeight: '500',
   },
+
   vazio: {
     textAlign: 'center',
     color: '#888',
     marginTop: 40,
     fontSize: 14,
   },
+
+  listaTalhoes: {
+    paddingBottom: 10,
+  },
+
   talhaoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -237,24 +302,30 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
+
   talhaoNome: {
     fontSize: 14,
     fontWeight: '500',
   },
+
   talhaoInfo: {
     fontSize: 12,
     color: '#666',
     marginTop: 2,
   },
+
   talhaoAcoes: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 14,
   },
+
   despesasHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 20,
     marginBottom: 12,
+    paddingBottom: 20,
   },
 });

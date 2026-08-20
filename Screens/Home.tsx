@@ -18,22 +18,22 @@ export default function Home() {
 
       <View style={styles.grid}>
         <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
-          <Ionicons name="map-outline" size={22} color="#fff" />
+          <Ionicons name="map-outline" size={28} color="#fff" />
           <Text style={styles.cardText}>Propriedades</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Plantios')}>
-          <Ionicons name="leaf-outline" size={22} color="#fff" />
+          <Ionicons name="leaf-outline" size={28} color="#fff" />
           <Text style={styles.cardText}>Plantios</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Despesas')}>
-          <Ionicons name="cash-outline" size={22} color="#fff" />
+          <Ionicons name="cash-outline" size={28} color="#fff" />
           <Text style={styles.cardText}>Despesas</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Resumo')}>
-          <Ionicons name="bar-chart-outline" size={22} color="#fff" />
+          <Ionicons name="bar-chart-outline" size={28} color="#fff" />
           <Text style={styles.cardText}>Resumo</Text>
         </TouchableOpacity>
       </View>
@@ -44,35 +44,40 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
   },
   titulo: {
-    fontSize: 20,
-    fontWeight: '500',
+    fontSize: 24,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 4,
   },
   subtitulo: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#666',
-    marginTop: 2,
-    marginBottom: 24,
+    textAlign: 'center',
+    marginBottom: 40,
   },
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+    gap: 16,
+    width: '100%',
   },
   card: {
-    width: '47%',
     backgroundColor: '#3B6D11',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'flex-start',
-    gap: 8,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   cardText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#fff',
   },
 });
