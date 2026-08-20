@@ -40,7 +40,7 @@ export default function Despesas() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.titulo}>Despesas</Text>
       </View>

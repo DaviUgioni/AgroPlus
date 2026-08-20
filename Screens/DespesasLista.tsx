@@ -48,7 +48,7 @@ export default function DespesasLista() {
   const total = totalDespesas(despesas);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Despesas</Text>
 
       <View style={styles.totalCard}>

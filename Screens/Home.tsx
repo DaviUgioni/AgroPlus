@@ -12,7 +12,7 @@ export default function Home() {
   const navigation = useNavigation<HomeNavigationProp>();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Bem-vindo ao AgroPlus</Text>
       <Text style={styles.subtitulo}>Gerencie sua produção com facilidade</Text>
 
@@ -22,7 +22,7 @@ export default function Home() {
           <Text style={styles.cardText}>Propriedades</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Plantios')}>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
           <Ionicons name="leaf-outline" size={28} color="#fff" />
           <Text style={styles.cardText}>Plantios</Text>
         </TouchableOpacity>
@@ -32,7 +32,7 @@ export default function Home() {
           <Text style={styles.cardText}>Despesas</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Resumo')}>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
           <Ionicons name="bar-chart-outline" size={28} color="#fff" />
           <Text style={styles.cardText}>Resumo</Text>
         </TouchableOpacity>
