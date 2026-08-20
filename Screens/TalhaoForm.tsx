@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { criarTalhao, atualizarTalhao, listarTalhoes } from '../Services/talhoes';
+import { buscarPropriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
 
 type TalhaoFormRouteProp = RouteProp<RootStackParamList, 'TalhaoForm'>;
@@ -16,6 +17,7 @@ export default function TalhaoForm() {
 
   const [nome, setNome] = useState('');
   const [area, setArea] = useState('');
+  const [areaTalhaoEdicao, setAreaTalhaoEdicao] = useState(0);
   const [carregando, setCarregando] = useState(modoEdicao);
   const [salvando, setSalvando] = useState(false);
 
@@ -33,6 +35,7 @@ export default function TalhaoForm() {
       if (talhao) {
         setNome(talhao.nome);
         setArea(String(talhao.area));
+        setAreaTalhaoEdicao(talhao.area);
       }
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar o talhão.');
@@ -55,6 +58,29 @@ export default function TalhaoForm() {
 
     try {
       setSalvando(true);
+
+      const [propriedade, talhoes] = await Promise.all([
+        buscarPropriedade(propriedadeId),
+        listarTalhoes(propriedadeId),
+      ]);
+
+      if (!propriedade) {
+        Alert.alert('Erro', 'Propriedade não encontrada.');
+        return;
+      }
+
+      const somaTalhoes = talhoes.reduce((acc, t) => acc + t.area, 0);
+      const somaComNovoTalhao = somaTalhoes - areaTalhaoEdicao + areaNumero;
+
+      if (somaComNovoTalhao > propriedade.areaTotal) {
+        const disponivel = propriedade.areaTotal - somaTalhoes + areaTalhaoEdicao;
+        Alert.alert(
+          'Área excede o total',
+          `A soma das áreas (${somaComNovoTalhao} ha) ultrapassa o total da propriedade (${propriedade.areaTotal} ha).\n\nDisponível: ${disponivel.toFixed(2)} ha.`
+        );
+        return;
+      }
+
       if (modoEdicao) {
         await atualizarTalhao(talhaoId!, { nome, area: areaNumero });
       } else {

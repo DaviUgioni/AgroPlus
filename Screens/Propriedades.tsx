@@ -39,26 +39,20 @@ export default function Propriedades() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.titulo}>Minhas propriedades</Text>
-        <TouchableOpacity
-          style={styles.botaoNovo}
-          onPress={() => navigation.navigate('PropriedadeForm')}
-        >
-          <Feather name="plus" size={16} color="#fff" />
-          <Text style={styles.botaoNovoTexto}>Nova</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <Text style={styles.titulo}>Minhas propriedades</Text>
 
       {carregando ? (
         <ActivityIndicator size="large" color="#3B6D11" style={{ marginTop: 40 }} />
       ) : propriedades.length === 0 ? (
-        <Text style={styles.vazio}>Nenhuma propriedade cadastrada ainda.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.vazio}>Nenhuma propriedade cadastrada ainda.</Text>
+        </View>
       ) : (
         <FlatList
           data={propriedades}
           keyExtractor={(item) => item.id!}
+          contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.item}
@@ -77,6 +71,14 @@ export default function Propriedades() {
           )}
         />
       )}
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate('PropriedadeForm')}
+      >
+        <Feather name="plus" size={20} color="#fff" />
+        <Text style={styles.fabText}>Nova propriedade</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -85,37 +87,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 16,
+    paddingBottom: 120,
+    alignContent:'center'
   },
   titulo: {
-    fontSize: 20,
-    fontWeight: '500',
+    fontSize: 24,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 20,
+    alignItems:'center'
   },
-  botaoNovo: {
-    flexDirection: 'row',
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#3B6D11',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    gap: 6,
-  },
-  botaoNovoTexto: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '500',
   },
   vazio: {
-    textAlign: 'center',
     color: '#888',
-    marginTop: 40,
     fontSize: 14,
+  },
+  listContent: {
+    paddingBottom: 120,
   },
   item: {
     flexDirection: 'row',
@@ -134,5 +126,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 2,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 100,
+    left: 24,
+    right: 24,
+    height: 52,
+    borderRadius: 10,
+    backgroundColor: '#3B6D11',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  fabText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
