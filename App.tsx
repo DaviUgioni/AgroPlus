@@ -11,6 +11,7 @@ import CriarConta from './Screens/CriarConta';
 import DespesaForm from './Screens/DespesaForm';
 import Despesas from './Screens/Despesas';
 import DespesasLista from './Screens/DespesasLista';
+import MapaSelecao from './Screens/MapaSelecao';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -23,6 +24,7 @@ export type RootStackParamList = {
   DespesaForm: { propriedadeId: string; talhaoId?: string };
   Despesas: undefined;
   DespesasLista: { propriedadeId: string };
+  MapaSelecao: { latitude?: number; longitude?: number; onSelect?: (coords: { latitude: number; longitude: number; endereco?: string }) => void } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -41,6 +43,7 @@ export default function App() {
         <Stack.Screen name="DespesaForm" component={DespesaForm} />
         <Stack.Screen name="Despesas" component={Despesas} />
         <Stack.Screen name="DespesasLista" component={DespesasLista} />
+        <Stack.Screen name="MapaSelecao" component={MapaSelecao} />
       </Stack.Navigator>
     </NavigationContainer>
   );

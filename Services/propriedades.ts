@@ -5,6 +5,8 @@ export interface Propriedade {
   id?: string;
   nome: string;
   localizacao: string;
+  latitude?: number;
+  longitude?: number;
   areaTotal: number;
   userId: string;
 }

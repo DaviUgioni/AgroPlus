@@ -104,7 +104,7 @@ export default function TalhaoForm() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>{modoEdicao ? 'Editar talhão' : 'Novo talhão'}</Text>
 
       <Text style={styles.label}>Nome do talhão</Text>

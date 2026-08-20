@@ -94,7 +94,7 @@ export default function PropriedadeDetalhe() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View>
           <Text style={styles.nome}>{propriedade.nome}</Text>

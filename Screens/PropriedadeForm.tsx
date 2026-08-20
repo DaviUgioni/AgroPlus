@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import {View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../FirebaseConfig';
 import { criarPropriedade, buscarPropriedade, atualizarPropriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
@@ -18,6 +19,8 @@ export default function PropriedadeForm() {
 
   const [nome, setNome] = useState('');
   const [localizacao, setLocalizacao] = useState('');
+  const [latitude, setLatitude] = useState<number | undefined>();
+  const [longitude, setLongitude] = useState<number | undefined>();
   const [areaTotal, setAreaTotal] = useState('');
   const [carregando, setCarregando] = useState(modoEdicao);
   const [salvando, setSalvando] = useState(false);
@@ -34,6 +37,8 @@ export default function PropriedadeForm() {
       if (propriedade) {
         setNome(propriedade.nome);
         setLocalizacao(propriedade.localizacao);
+        setLatitude(propriedade.latitude);
+        setLongitude(propriedade.longitude);
         setAreaTotal(String(propriedade.areaTotal));
       }
     } catch (error) {
@@ -42,6 +47,24 @@ export default function PropriedadeForm() {
       setCarregando(false);
     }
   }
+
+  const handleAbrirMapa = () => {
+    navigation.navigate('MapaSelecao', {
+      latitude,
+      longitude,
+      onSelect: (coords: { latitude: number; longitude: number; endereco?: string }) => {
+        setLatitude(coords.latitude);
+        setLongitude(coords.longitude);
+        setLocalizacao(coords.endereco || `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`);
+      },
+    });
+  };
+
+  const handleLimparLocalizacao = () => {
+    setLocalizacao('');
+    setLatitude(undefined);
+    setLongitude(undefined);
+  };
 
   async function handleSalvar() {
     if (!nome.trim() || !localizacao.trim() || !areaTotal.trim()) {
@@ -63,10 +86,18 @@ export default function PropriedadeForm() {
 
     try {
       setSalvando(true);
+      const dados = {
+        nome,
+        localizacao,
+        latitude,
+        longitude,
+        areaTotal: area,
+        userId,
+      };
       if (modoEdicao) {
-        await atualizarPropriedade(propriedadeId!, { nome, localizacao, areaTotal: area });
+        await atualizarPropriedade(propriedadeId!, dados);
       } else {
-        await criarPropriedade({ nome, localizacao, areaTotal: area, userId });
+        await criarPropriedade(dados);
       }
       Alert.alert('Sucesso', modoEdicao ? 'Propriedade atualizada!' : 'Propriedade cadastrada!');
       navigation.goBack();
@@ -86,7 +117,7 @@ export default function PropriedadeForm() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>{modoEdicao ? 'Editar propriedade' : 'Nova propriedade'}</Text>
 
       <Text style={styles.label}>Nome da propriedade</Text>
@@ -98,12 +129,23 @@ export default function PropriedadeForm() {
       />
 
       <Text style={styles.label}>Localização</Text>
-      <TextInput
-        style={styles.input}
-        value={localizacao}
-        onChangeText={setLocalizacao}
-        placeholder="Criciúma, SC"
-      />
+      <View style={styles.localizacaoContainer}>
+        <TextInput
+          style={[styles.input, styles.inputComBotao]}
+          value={localizacao}
+          onChangeText={setLocalizacao}
+          placeholder="Criciúma, SC"
+          editable={false}
+        />
+        <TouchableOpacity style={styles.botaoMapa} onPress={handleAbrirMapa}>
+          <Ionicons name="map-outline" size={24} color="#3B6D11" />
+        </TouchableOpacity>
+      </View>
+      {localizacao && (
+        <TouchableOpacity style={styles.botaoLimpar} onPress={handleLimparLocalizacao}>
+          <Text style={styles.botaoLimparTexto}>Remover localização</Text>
+        </TouchableOpacity>
+      )}
 
       <Text style={styles.label}>Área total (ha)</Text>
       <TextInput
@@ -153,6 +195,37 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     fontSize: 15,
+  },
+  inputComBotao: {
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+    paddingRight: 0,
+  },
+  localizacaoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  botaoMapa: {
+    width: 48,
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderLeftWidth: 0,
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  botaoLimpar: {
+    marginTop: 8,
+    padding: 8,
+    alignSelf: 'flex-start',
+  },
+  botaoLimparTexto: {
+    color: '#E74C3C',
+    fontSize: 13,
+    fontWeight: '500',
   },
   botao: {
     backgroundColor: '#3B6D11',
