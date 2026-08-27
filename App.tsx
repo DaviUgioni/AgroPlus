@@ -12,6 +12,8 @@ import DespesaForm from './Screens/DespesaForm';
 import Despesas from './Screens/Despesas';
 import DespesasLista from './Screens/DespesasLista';
 import MapaSelecao from './Screens/MapaSelecao';
+import Plantios from './Screens/Plantios';
+import Resumo from './Screens/Resumo';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -25,6 +27,8 @@ export type RootStackParamList = {
   Despesas: undefined;
   DespesasLista: { propriedadeId: string };
   MapaSelecao: { latitude?: number; longitude?: number; onSelect?: (coords: { latitude: number; longitude: number; endereco?: string }) => void } | undefined;
+  Plantios: undefined;
+  Resumo: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -44,6 +48,8 @@ export default function App() {
         <Stack.Screen name="Despesas" component={Despesas} />
         <Stack.Screen name="DespesasLista" component={DespesasLista} />
         <Stack.Screen name="MapaSelecao" component={MapaSelecao} />
+        <Stack.Screen name="Plantios" component={Plantios} />
+        <Stack.Screen name="Resumo" component={Resumo} />
       </Stack.Navigator>
     </NavigationContainer>
   );

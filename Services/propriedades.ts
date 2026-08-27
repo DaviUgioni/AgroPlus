@@ -1,5 +1,6 @@
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where, serverTimestamp, writeBatch,} from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
+import { excluirImagemPropriedade } from './imagens';
 
 export interface Propriedade {
   id?: string;
@@ -9,6 +10,7 @@ export interface Propriedade {
   longitude?: number;
   areaTotal: number;
   userId: string;
+  imagemUrl?: string;
 }
 
 export async function criarPropriedade(dados: Omit<Propriedade, 'id'>) {
@@ -50,4 +52,6 @@ export async function excluirPropriedade(id: string) {
   });
 
   await batch.commit();
+
+  excluirImagemPropriedade(id);
 }

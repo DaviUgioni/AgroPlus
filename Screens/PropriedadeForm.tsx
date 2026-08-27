@@ -1,11 +1,13 @@
 // Screens/PropriedadeForm.tsx
 import { useState, useEffect } from 'react';
-import {View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator} from 'react-native';
+import {View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Image} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { auth } from '../FirebaseConfig';
-import { criarPropriedade, buscarPropriedade, atualizarPropriedade } from '../Services/propriedades';
+import { criarPropriedade, buscarPropriedade, atualizarPropriedade, type Propriedade } from '../Services/propriedades';
+import { enviarImagemPropriedade } from '../Services/imagens';
 import { RootStackParamList } from '../App';
 
 type PropriedadeFormRouteProp = RouteProp<RootStackParamList, 'PropriedadeForm'>;
@@ -24,6 +26,8 @@ export default function PropriedadeForm() {
   const [areaTotal, setAreaTotal] = useState('');
   const [carregando, setCarregando] = useState(modoEdicao);
   const [salvando, setSalvando] = useState(false);
+  const [imagemUrl, setImagemUrl] = useState<string | undefined>();
+  const [imagemLocal, setImagemLocal] = useState<string | undefined>();
 
   useEffect(() => {
     if (modoEdicao) {
@@ -40,13 +44,34 @@ export default function PropriedadeForm() {
         setLatitude(propriedade.latitude);
         setLongitude(propriedade.longitude);
         setAreaTotal(String(propriedade.areaTotal));
+        setImagemUrl(propriedade.imagemUrl);
       }
     } catch (error) {
+      console.log('Erro ao carregar propriedade:', error);
       Alert.alert('Erro', 'Não foi possível carregar a propriedade.');
     } finally {
       setCarregando(false);
     }
   }
+
+  const handleEscolherImagem = async () => {
+    const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissao.granted) {
+      Alert.alert('Atenção', 'Permissão de acesso à galeria necessária.');
+      return;
+    }
+
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+    });
+
+    if (!resultado.canceled) {
+      setImagemLocal(resultado.assets[0].uri);
+    }
+  };
 
   const handleAbrirMapa = () => {
     navigation.navigate('MapaSelecao', {
@@ -86,23 +111,34 @@ export default function PropriedadeForm() {
 
     try {
       setSalvando(true);
-      const dados = {
+      const dados: Partial<Omit<Propriedade, 'id'>> = {
         nome,
         localizacao,
-        latitude,
-        longitude,
         areaTotal: area,
         userId,
       };
+      if (latitude !== undefined) dados.latitude = latitude;
+      if (longitude !== undefined) dados.longitude = longitude;
+
+      let id = propriedadeId;
       if (modoEdicao) {
-        await atualizarPropriedade(propriedadeId!, dados);
+        await atualizarPropriedade(id!, dados);
       } else {
-        await criarPropriedade(dados);
+        id = await criarPropriedade(dados as Omit<Propriedade, 'id'>);
       }
+
+      if (imagemLocal) {
+        const url = await enviarImagemPropriedade(imagemLocal, id!);
+        await atualizarPropriedade(id!, { imagemUrl: url });
+      }
+
       Alert.alert('Sucesso', modoEdicao ? 'Propriedade atualizada!' : 'Propriedade cadastrada!');
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar. Tente novamente.');
+      console.log('Erro ao salvar propriedade:', error);
+      const mensagem =
+        error instanceof Error ? error.message : 'Não foi possível salvar. Tente novamente.';
+      Alert.alert('Erro', mensagem);
     } finally {
       setSalvando(false);
     }
@@ -120,6 +156,36 @@ export default function PropriedadeForm() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>{modoEdicao ? 'Editar propriedade' : 'Nova propriedade'}</Text>
 
+      <Text style={styles.label}>Imagem</Text>
+      <View style={styles.imagemContainer}>
+        {(imagemLocal || imagemUrl) && (
+          <Image
+            source={{ uri: imagemLocal || imagemUrl }}
+            style={styles.imagemPreview}
+          />
+        )}
+        <View style={styles.imagemBotoes}>
+          <TouchableOpacity style={styles.imagemBotao} onPress={handleEscolherImagem}>
+            <Ionicons name="image-outline" size={20} color="#3B6D11" />
+            <Text style={styles.imagemBotaoTexto}>
+              {imagemLocal || imagemUrl ? 'Trocar imagem' : 'Escolher imagem da galeria'}
+            </Text>
+          </TouchableOpacity>
+          {(imagemLocal || imagemUrl) && (
+            <TouchableOpacity
+              style={styles.imagemBotao}
+              onPress={() => {
+                setImagemLocal(undefined);
+                setImagemUrl(undefined);
+              }}
+            >
+              <Ionicons name="trash-outline" size={20} color="#c0392b" />
+              <Text style={[styles.imagemBotaoTexto, { color: '#c0392b' }]}>Remover</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       <Text style={styles.label}>Nome da propriedade</Text>
       <TextInput
         style={styles.input}
@@ -135,7 +201,6 @@ export default function PropriedadeForm() {
           value={localizacao}
           onChangeText={setLocalizacao}
           placeholder="Criciúma, SC"
-          editable={false}
         />
         <TouchableOpacity style={styles.botaoMapa} onPress={handleAbrirMapa}>
           <Ionicons name="map-outline" size={24} color="#3B6D11" />
@@ -216,6 +281,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  imagemContainer: {
+    gap: 8,
+  },
+  imagemPreview: {
+    width: '100%',
+    height: 160,
+    borderRadius: 8,
+    backgroundColor: '#eee',
+  },
+  imagemBotoes: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  imagemBotao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flex: 1,
+  },
+  imagemBotaoTexto: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#3B6D11',
   },
   botaoLimpar: {
     marginTop: 8,

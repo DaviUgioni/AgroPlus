@@ -22,7 +22,7 @@ export default function Home() {
           <Text style={styles.cardText}>Propriedades</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Plantios')}>
           <Ionicons name="leaf-outline" size={28} color="#fff" />
           <Text style={styles.cardText}>Plantios</Text>
         </TouchableOpacity>
@@ -32,7 +32,7 @@ export default function Home() {
           <Text style={styles.cardText}>Despesas</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Resumo')}>
           <Ionicons name="bar-chart-outline" size={28} color="#fff" />
           <Text style={styles.cardText}>Resumo</Text>
         </TouchableOpacity>
