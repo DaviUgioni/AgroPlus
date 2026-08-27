@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, FlatList, ActivityIndicator, Alert} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, FlatList, ActivityIndicator, Alert, Image} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -26,6 +26,7 @@ export default function Propriedades() {
       const dados = await listarPropriedades(userId);
       setPropriedades(dados);
     } catch (error) {
+      console.log('Erro ao listar propriedades:', error);
       Alert.alert('Erro', 'Não foi possível carregar as propriedades.');
     } finally {
       setCarregando(false);
@@ -60,7 +61,10 @@ export default function Propriedades() {
                 navigation.navigate('PropriedadeDetalhe', { propriedadeId: item.id! })
               }
             >
-              <View>
+              {item.imagemUrl && (
+                <Image source={{ uri: item.imagemUrl }} style={styles.itemImagem} />
+              )}
+              <View style={styles.itemTexto}>
                 <Text style={styles.itemNome}>{item.nome}</Text>
                 <Text style={styles.itemInfo}>
                   {item.localizacao} · {item.areaTotal} ha
@@ -117,6 +121,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     marginBottom: 10,
+    gap: 12,
+  },
+  itemImagem: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#ddd',
+  },
+  itemTexto: {
+    flex: 1,
   },
   itemNome: {
     fontSize: 15,

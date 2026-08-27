@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, Image} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, useFocusEffect, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -29,6 +29,7 @@ export default function PropriedadeDetalhe() {
       setPropriedade(prop);
       setTalhoes(listaTalhoes);
     } catch (error) {
+      console.log('Erro ao carregar detalhe:', error);
       Alert.alert('Erro', 'Não foi possível carregar os dados.');
     } finally {
       setCarregando(false);
@@ -119,6 +120,10 @@ export default function PropriedadeDetalhe() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {propriedade.imagemUrl && (
+        <Image source={{ uri: propriedade.imagemUrl }} style={styles.imagem} />
+      )}
 
       <View style={styles.talhoesHeader}>
         <Text style={styles.talhoesTitulo}>Talhões</Text>
@@ -228,6 +233,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginTop: 2,
+  },
+
+  imagem: {
+    width: '100%',
+    height: 180,
+    borderRadius: 10,
+    marginBottom: 16,
+    backgroundColor: '#eee',
   },
 
   headerAcoes: {
