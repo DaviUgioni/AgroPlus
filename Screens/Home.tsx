@@ -1,18 +1,34 @@
 // Screens/Home.tsx
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { signOut } from 'firebase/auth';
+import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 export default function Home() {
   const navigation = useNavigation<HomeNavigationProp>();
+  const insets = useSafeAreaInsets();
+
+  async function handleSair() {
+    try {
+      await signOut(auth);
+      navigation.navigate('Login' as never);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível sair.');
+    }
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <TouchableOpacity onPress={handleSair} style={[styles.sairBtn, { top: insets.top + 8 }]}>
+        <Ionicons name="log-out-outline" size={18} color="#3B6D11" />
+        <Text style={styles.sairTexto}>Sair</Text>
+      </TouchableOpacity>
       <Text style={styles.titulo}>Bem-vindo ao AgroPlus</Text>
       <Text style={styles.subtitulo}>Gerencie sua produção com facilidade</Text>
 
@@ -79,5 +95,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  sairBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 8,
+  },
+  sairTexto: {
+    color: '#3B6D11',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

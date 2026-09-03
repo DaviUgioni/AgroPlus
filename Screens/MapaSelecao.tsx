@@ -1,6 +1,7 @@
 // Screens/MapaSelecao.tsx
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, PermissionsAndroid, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation, useRoute, useFocusEffect, RouteProp, NavigationProp } from '@react-navigation/native';
@@ -23,7 +24,7 @@ const REGIAO_INICIAL = {
   longitudeDelta: 0.5,
 };
 
-const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const OSM_TILE_URL = 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 export default function MapaSelecao() {
   const navigation = useNavigation<MapaSelecaoNavigationProp>();
@@ -42,22 +43,8 @@ export default function MapaSelecao() {
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        if (Platform.OS === 'android') {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            {
-              title: 'Localização do AgroPlus',
-              message: 'AgroPlus precisa acessar sua localização para mostrar no mapa.',
-              buttonNeutral: 'Perguntar depois',
-              buttonNegative: 'Cancelar',
-              buttonPositive: 'OK'
-            }
-          );
-          setLocationPermissionGranted(granted === PermissionsAndroid.RESULTS.GRANTED);
-        } else {
-          const { status } = await Location.requestForegroundPermissionsAsync();
-          setLocationPermissionGranted(status === 'granted');
-        }
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        setLocationPermissionGranted(status === 'granted');
       })();
       return () => {};
     }, [])
@@ -113,35 +100,27 @@ export default function MapaSelecao() {
       Alert.alert('Atenção', 'Selecione uma localização no mapa.');
       return;
     }
-    // Chamar o callback de seleção se fornecido
-    const onSelect = route.params?.onSelect;
-    if (onSelect) {
-      onSelect({
-        latitude: localizacaoSelecionada.latitude,
-        longitude: localizacaoSelecionada.longitude,
-        endereco: localizacaoSelecionada.endereco || enderecoAtual,
-      });
-    }
-    navigation.goBack();
+    // Retorna via navigation params (serializável) — Opção A
+    (navigation as any).navigate('PropriedadeForm', {
+      latitude: localizacaoSelecionada.latitude,
+      longitude: localizacaoSelecionada.longitude,
+      endereco: localizacaoSelecionada.endereco || enderecoAtual,
+    });
   };
 
   const handleMinhaLocalizacao = async () => {
     if (!locationPermissionGranted) {
-      Alert.alert('Permissão negada', 'Permita o acesso à localização nas configurações do app.');
-      return;
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão negada', 'Permita o acesso à localização nas configurações do app.');
+        return;
+      }
+      setLocationPermissionGranted(true);
     }
     setLocationLoading(true);
     try {
-      let position;
-      if (Platform.OS === 'android') {
-        // Use PermissionsAndroid already granted, get current position via expo-location
-        const loc = await Location.getCurrentPositionAsync({});
-        position = loc.coords;
-      } else {
-        const loc = await Location.getCurrentPositionAsync({});
-        position = loc.coords;
-      }
-      const { latitude, longitude } = position;
+      const loc = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = loc.coords;
       setLocalizacaoSelecionada({ latitude, longitude });
       buscarEndereco(latitude, longitude);
       if (mapRef.current) {
@@ -183,7 +162,7 @@ export default function MapaSelecao() {
         loadingEnabled={true}
       >
         {/* OSM Tiles */}
-        <UrlTile urlTemplate={OSM_TILE_URL} />
+        <UrlTile urlTemplate={OSM_TILE_URL} maximumZ={19} flipY={false} />
         {localizacaoSelecionada && (
           <Marker
             coordinate={{
@@ -281,7 +260,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 130,
     left: 12,
     right: 12,
     backgroundColor: '#fff',

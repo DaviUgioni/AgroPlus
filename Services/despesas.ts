@@ -5,6 +5,7 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  getDoc,
   query,
   where,
   orderBy,
@@ -44,6 +45,13 @@ export async function atualizarDespesa(id: string, despesa: Partial<Despesa>) {
 export async function excluirDespesa(id: string) {
   const despesaRef = doc(db, 'despesas', id);
   await deleteDoc(despesaRef);
+}
+
+export async function buscarDespesa(id: string): Promise<Despesa | null> {
+  const ref = doc(db, 'despesas', id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as Despesa;
 }
 
 export async function listarDespesasPorPropriedade(propriedadeId: string): Promise<Despesa[]> {

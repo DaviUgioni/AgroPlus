@@ -1,8 +1,8 @@
 // Screens/PropriedadeForm.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Image} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { auth } from '../FirebaseConfig';
@@ -33,7 +33,23 @@ export default function PropriedadeForm() {
     if (modoEdicao) {
       carregarDados();
     }
-  }, []);
+  }, [propriedadeId]);
+
+  // Recebe retorno do MapaSelecao via params (Opção A serializável)
+  useFocusEffect(
+    useCallback(() => {
+      const p = route.params as any;
+      if (p?.latitude !== undefined && p?.longitude !== undefined) {
+        setLatitude(p.latitude);
+        setLongitude(p.longitude);
+        if (p.endereco) setLocalizacao(p.endereco);
+        else setLocalizacao(`${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}`);
+        // Limpa params para não reaplicar ao voltar novamente
+        // @ts-ignore
+        navigation.setParams({ latitude: undefined, longitude: undefined, endereco: undefined });
+      }
+    }, [route.params])
+  );
 
   async function carregarDados() {
     try {
@@ -77,11 +93,6 @@ export default function PropriedadeForm() {
     navigation.navigate('MapaSelecao', {
       latitude,
       longitude,
-      onSelect: (coords: { latitude: number; longitude: number; endereco?: string }) => {
-        setLatitude(coords.latitude);
-        setLongitude(coords.longitude);
-        setLocalizacao(coords.endereco || `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`);
-      },
     });
   };
 

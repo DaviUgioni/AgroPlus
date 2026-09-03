@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { criarTalhao, atualizarTalhao, listarTalhoes } from '../Services/talhoes';
 import { buscarPropriedade } from '../Services/propriedades';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 
 type TalhaoFormRouteProp = RouteProp<RootStackParamList, 'TalhaoForm'>;
@@ -25,17 +27,18 @@ export default function TalhaoForm() {
     if (modoEdicao) {
       carregarDados();
     }
-  }, []);
+  }, [talhaoId]);
 
   async function carregarDados() {
     try {
-
-      const talhoes = await listarTalhoes(propriedadeId);
-      const talhao = talhoes.find((t) => t.id === talhaoId);
-      if (talhao) {
+      const snap = await getDoc(doc(db, 'talhoes', talhaoId!));
+      if (snap.exists()) {
+        const talhao = snap.data() as any;
         setNome(talhao.nome);
         setArea(String(talhao.area));
         setAreaTalhaoEdicao(talhao.area);
+      } else {
+        Alert.alert('Erro', 'Talhão não encontrado.');
       }
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar o talhão.');
