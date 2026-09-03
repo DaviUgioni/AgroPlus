@@ -78,8 +78,9 @@ export default function DespesasLista() {
     }, [propriedadeId, talhaoId])
   );
 
-  const anoAtual = new Date().getFullYear();
-  const mesAtual = new Date().getMonth();
+  const agora = new Date();
+  const anoAtual = agora.getFullYear();
+  const mesAtual = agora.getMonth();
 
   const despesasFiltradas = useMemo(() => {
     return despesas.filter((d) => {
@@ -92,9 +93,16 @@ export default function DespesasLista() {
     });
   }, [despesas, filtroCat, filtroMes]);
 
-  const total = totalDespesas(despesasFiltradas);
-  const totalMes = totalDespesasMes(despesas, anoAtual, filtroMes !== -1 ? filtroMes : mesAtual);
-  const totalAno = totalDespesasAno(despesas, anoAtual);
+  // Só conta o que já venceu (data <= agora) — recorrências futuras não entram no total agora
+  const despesasAteAgora = useMemo(() => despesas.filter((d) => (d.data?.toMillis?.() ?? 0) <= agora.getTime()), [despesas]);
+  const despesasFiltradasAteAgora = useMemo(
+    () => despesasFiltradas.filter((d) => (d.data?.toMillis?.() ?? 0) <= agora.getTime()),
+    [despesasFiltradas]
+  );
+
+  const total = totalDespesas(despesasFiltradasAteAgora);
+  const totalMes = totalDespesasMes(despesasAteAgora, anoAtual, filtroMes !== -1 ? filtroMes : mesAtual);
+  const totalAno = totalDespesasAno(despesasAteAgora, anoAtual);
 
   const limiteNum = parseFloat(limite.replace(',', '.'));
   const estourou = limiteSalvo !== undefined && !isNaN(limiteNum) && totalMes > limiteNum;
@@ -179,9 +187,11 @@ export default function DespesasLista() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.titulo}>{modoTalhao ? `Despesas — ${talhaoNome ?? 'Talhão'}` : 'Despesas'}</Text>
-          {modoTalhao && <Text style={styles.subtitulo}>{propriedadeId} • lista separada por talhão</Text>}
+        <View style={{ flex: 1, flexShrink: 1, marginRight: 12 }}>
+          <Text style={styles.titulo} numberOfLines={1}>
+            {modoTalhao ? `Despesas — ${talhaoNome ?? 'Talhão'}` : 'Despesas'}
+          </Text>
+          {modoTalhao && <Text style={styles.subtitulo} numberOfLines={1}>{talhaoNome}</Text>}
         </View>
         <TouchableOpacity onPress={handleExportar} style={styles.exportBtn}>
           <Feather name="share-2" size={16} color="#3B6D11" />
@@ -257,19 +267,22 @@ export default function DespesasLista() {
           data={despesasFiltradas}
           keyExtractor={(item) => item.id!}
           contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
-          renderItem={({ item }) => (
-            <View style={styles.item}>
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemCategoria}>
-                  {LABELS_CATEGORIA[item.categoria]} • {item.data?.toDate?.()?.toLocaleDateString('pt-BR') ?? '--'}
-                  {item.recorrente ? ' • Recorrente' : ''}
-                </Text>
-                <Text style={styles.itemDescricao}>{item.descricao}</Text>
-                {item.notaFiscalUri ? (
-                  <Text style={styles.itemNota}>📎 Nota anexada</Text>
-                ) : null}
-                <Text style={styles.itemValor}>{item.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Text>
-              </View>
+          renderItem={({ item }) => {
+            const isFutura = (item.data?.toMillis?.() ?? 0) > agora.getTime();
+            return (
+              <View style={[styles.item, isFutura ? styles.itemFuturo : null]}>
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemCategoria}>
+                    {LABELS_CATEGORIA[item.categoria]} • {item.data?.toDate?.()?.toLocaleDateString('pt-BR') ?? '--'}
+                    {item.recorrente ? ' • Recorrente' : ''} {isFutura ? ' • Agendada' : ''}
+                  </Text>
+                  <Text style={styles.itemDescricao}>{item.descricao}</Text>
+                  {item.notaFiscalUri ? <Text style={styles.itemNota}>📎 Nota anexada</Text> : null}
+                  {isFutura && <Text style={styles.itemFuturoTexto}>Será contabilizada quando o mês chegar</Text>}
+                  <Text style={[styles.itemValor, isFutura ? styles.itemValorFuturo : null]}>
+                    {item.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </Text>
+                </View>
               <View style={styles.acoes}>
                 <TouchableOpacity
                   style={styles.acaoBotao}
@@ -289,7 +302,8 @@ export default function DespesasLista() {
                 </TouchableOpacity>
               </View>
             </View>
-          )}
+            );
+          }}
         />
       )}
 
@@ -460,6 +474,12 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
+  itemFuturo: {
+    opacity: 0.7,
+    borderWidth: 1,
+    borderColor: '#d1c9a8',
+    borderStyle: 'dashed',
+  },
   itemInfo: {
     flex: 1,
   },
@@ -482,6 +502,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3B6D11',
     marginTop: 6,
+  },
+  itemValorFuturo: {
+    color: '#888',
+    fontWeight: '500',
+  },
+  itemFuturoTexto: {
+    fontSize: 11,
+    color: '#8a7d4b',
+    marginTop: 2,
+    fontStyle: 'italic',
   },
   acoes: {
     flexDirection: 'row',
