@@ -18,6 +18,7 @@ import { Feather } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
+import { COLORS, RADIUS } from '../constants/theme';
 
 type CriarContaNavigationProp = NavigationProp<RootStackParamList, 'CriarConta'>;
 
@@ -215,8 +216,8 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: COLORS.borda,
+    borderRadius: RADIUS.sm,
     padding: 10,
     fontSize: 15,
   },
@@ -232,8 +233,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: COLORS.borda,
+    borderRadius: RADIUS.sm,
     paddingHorizontal: 10,
   },
   inputFlex: {
@@ -268,8 +269,8 @@ const styles = StyleSheet.create({
     minWidth: 40,
   },
   button: {
-    backgroundColor: '#0F6E56',
-    borderRadius: 8,
+    backgroundColor: COLORS.verde,
+    borderRadius: RADIUS.sm,
     padding: 14,
     alignItems: 'center',
     marginTop: 24,
@@ -280,7 +281,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   link: {
-    color: '#0F6E56',
+    color: COLORS.verde,
     textAlign: 'center',
     marginTop: 16,
     fontSize: 13,

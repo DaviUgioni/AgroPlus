@@ -30,7 +30,7 @@ export type RootStackParamList = {
   DespesaForm: { propriedadeId: string; talhaoId?: string; despesaId?: string };
   Despesas: undefined;
   DespesasLista: { propriedadeId: string; talhaoId?: string; talhaoNome?: string };
-  MapaSelecao: { latitude?: number; longitude?: number } | undefined;
+  MapaSelecao: { latitude?: number; longitude?: number; propriedadeId?: string } | undefined;
   Plantios: undefined;
   Resumo: undefined;
 };

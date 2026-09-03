@@ -10,6 +10,7 @@ import { criarDespesa, atualizarDespesa, buscarDespesa, CategoriaDespesa } from 
 import { listarTalhoes, Talhao } from '../Services/talhoes';
 import { enviarNotaFiscal } from '../Services/imagens';
 import { RootStackParamList } from '../App';
+import { COLORS, RADIUS } from '../constants/theme';
 
 type DespesaFormRouteProp = RouteProp<RootStackParamList, 'DespesaForm'>;
 type DespesaFormNavProp = NavigationProp<RootStackParamList, 'DespesaForm'>;
@@ -152,7 +153,7 @@ export default function DespesaForm() {
   if (carregando) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B6D11" />
+        <ActivityIndicator size="large" color={COLORS.verde} />
       </SafeAreaView>
     );
   }
@@ -207,7 +208,7 @@ export default function DespesaForm() {
           )}
           <View style={styles.notaBotoes}>
             <TouchableOpacity style={styles.notaBtn} onPress={handleEscolherNota}>
-              <Feather name="camera" size={16} color="#3B6D11" />
+              <Feather name="camera" size={16} color={COLORS.verde} />
               <Text style={styles.notaBtnTexto}>{notaLocal || notaUrlExistente ? 'Trocar foto' : 'Anexar foto'}</Text>
             </TouchableOpacity>
             {(notaLocal || notaUrlExistente) && (
@@ -229,7 +230,7 @@ export default function DespesaForm() {
           <>
             <View style={styles.switchRow}>
               <Text style={styles.label}>Repetir todo mês</Text>
-              <Switch value={recorrente} onValueChange={setRecorrente} trackColor={{ true: '#3B6D11' }} />
+              <Switch value={recorrente} onValueChange={setRecorrente} trackColor={{ true: COLORS.verde }} />
             </View>
             {recorrente && (
               <>
@@ -279,8 +280,8 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: COLORS.borda,
+    borderRadius: RADIUS.sm,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
   notaPreview: {
     width: '100%',
     height: 180,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     backgroundColor: '#eee',
   },
   notaBotoes: {
@@ -310,14 +311,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: COLORS.borda,
+    borderRadius: RADIUS.sm,
     paddingVertical: 10,
   },
   notaBtnTexto: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#3B6D11',
+    color: COLORS.verde,
   },
   switchRow: {
     flexDirection: 'row',
@@ -326,8 +327,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   botao: {
-    backgroundColor: '#3B6D11',
-    borderRadius: 8,
+    backgroundColor: COLORS.verde,
+    borderRadius: RADIUS.sm,
     padding: 14,
     alignItems: 'center',
     marginTop: 24,

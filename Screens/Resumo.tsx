@@ -1,6 +1,7 @@
 // Screens/Resumo.tsx
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { COLORS, RADIUS } from '../constants/theme';
 
 export default function Resumo() {
   return (

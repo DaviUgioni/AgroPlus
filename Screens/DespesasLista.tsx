@@ -20,6 +20,7 @@ import { buscarPropriedade } from '../Services/propriedades';
 import { doc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
+import { COLORS, RADIUS } from '../constants/theme';
 
 type DespesasListaRouteProp = RouteProp<RootStackParamList, 'DespesasLista'>;
 type NavProp = NavigationProp<RootStackParamList>;
@@ -194,7 +195,7 @@ export default function DespesasLista() {
           {modoTalhao && <Text style={styles.subtitulo} numberOfLines={1}>{talhaoNome}</Text>}
         </View>
         <TouchableOpacity onPress={handleExportar} style={styles.exportBtn}>
-          <Feather name="share-2" size={16} color="#3B6D11" />
+          <Feather name="share-2" size={16} color={COLORS.verde} />
           <Text style={styles.exportTexto}>Exportar</Text>
         </TouchableOpacity>
       </View>
@@ -259,7 +260,7 @@ export default function DespesasLista() {
       )}
 
       {carregando ? (
-        <ActivityIndicator size="large" color="#3B6D11" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
       ) : despesasFiltradas.length === 0 ? (
         <Text style={styles.vazio}>Nenhuma despesa com esse filtro.</Text>
       ) : (
@@ -344,19 +345,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     borderWidth: 1,
-    borderColor: '#3B6D11',
+    borderColor: COLORS.verde,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
   },
   exportTexto: {
-    color: '#3B6D11',
+    color: COLORS.verde,
     fontSize: 13,
     fontWeight: '600',
   },
   totalCard: {
-    backgroundColor: '#3B6D11',
-    borderRadius: 12,
+    backgroundColor: COLORS.verde,
+    borderRadius: RADIUS.md,
     padding: 16,
     marginBottom: 12,
   },
@@ -378,7 +379,7 @@ const styles = StyleSheet.create({
   totalMini: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     padding: 8,
   },
   totalMiniLabel: {
@@ -406,8 +407,8 @@ const styles = StyleSheet.create({
   },
   pickerBox: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: COLORS.borda,
+    borderRadius: RADIUS.sm,
     overflow: 'hidden',
     backgroundColor: '#fff',
     paddingHorizontal: 4,
@@ -418,8 +419,8 @@ const styles = StyleSheet.create({
   },
   limiteBox: {
     marginBottom: 12,
-    backgroundColor: '#F1EFE8',
-    borderRadius: 10,
+    backgroundColor: COLORS.bege,
+    borderRadius: RADIUS.md,
     padding: 10,
   },
   limiteLabel: {
@@ -435,8 +436,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: COLORS.borda,
+    borderRadius: RADIUS.sm,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 14,
@@ -446,8 +447,8 @@ const styles = StyleSheet.create({
     borderColor: '#E74C3C',
   },
   limiteBtn: {
-    backgroundColor: '#3B6D11',
-    borderRadius: 8,
+    backgroundColor: COLORS.verde,
+    borderRadius: RADIUS.sm,
     paddingHorizontal: 16,
     justifyContent: 'center',
   },
@@ -469,8 +470,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   item: {
-    backgroundColor: '#F1EFE8',
-    borderRadius: 10,
+    backgroundColor: COLORS.bege,
+    borderRadius: RADIUS.md,
     padding: 14,
     marginBottom: 10,
   },
@@ -494,13 +495,13 @@ const styles = StyleSheet.create({
   },
   itemNota: {
     fontSize: 11,
-    color: '#3B6D11',
+    color: COLORS.verde,
     marginTop: 2,
   },
   itemValor: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#3B6D11',
+    color: COLORS.verde,
     marginTop: 6,
   },
   itemValorFuturo: {
@@ -531,7 +532,7 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
   },
   acaoExcluir: {
     borderColor: '#e9b4b4',
@@ -547,8 +548,8 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     flexDirection: 'row',
-    backgroundColor: '#3B6D11',
-    borderRadius: 12,
+    backgroundColor: COLORS.verde,
+    borderRadius: RADIUS.md,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',

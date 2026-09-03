@@ -19,6 +19,7 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/aut
 import * as LocalAuthentication from 'expo-local-authentication';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
+import { COLORS, RADIUS } from '../constants/theme';
 
 type LoginNavigationProp = NavigationProp<RootStackParamList, 'Login'>;
 
@@ -186,7 +187,7 @@ export default function Login() {
 
             {bioDisponivel ? (
               <TouchableOpacity style={styles.botaoBio} onPress={handleBiometria}>
-                <Feather name="smartphone" size={18} color="#3B6D11" />
+                <Feather name="smartphone" size={18} color={COLORS.verde} />
                 <Text style={styles.botaoBioTexto}>Entrar com impressão digital</Text>
               </TouchableOpacity>
             ) : null}
@@ -203,7 +204,7 @@ export default function Login() {
   );
 }
 
-const VERDE = '#3B6D11';
+const VERDE = COLORS.verde;
 
 const styles = StyleSheet.create({
   scrollContent: {
@@ -242,8 +243,8 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    backgroundColor: '#F1EFE8',
-    borderRadius: 12,
+    backgroundColor: COLORS.bege,
+    borderRadius: RADIUS.md,
     overflow: 'hidden',
     marginBottom: 8,
     borderWidth: 1,
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
   botao: {
     width: '100%',
     backgroundColor: VERDE,
-    borderRadius: 24,
+    borderRadius: RADIUS.pill,
     paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 12,
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 1.5,
     borderColor: VERDE,
-    borderRadius: 24,
+    borderRadius: RADIUS.pill,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
