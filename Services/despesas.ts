@@ -24,6 +24,9 @@ export interface Despesa {
   valor: number;
   data: Timestamp;
   criadoEm?: Timestamp;
+  notaFiscalUri?: string | null;
+  recorrente?: boolean;
+  recorrenciaMeses?: number;
 }
 
 const despesasCollection = collection(db, 'despesas');
@@ -45,6 +48,10 @@ export async function atualizarDespesa(id: string, despesa: Partial<Despesa>) {
 export async function excluirDespesa(id: string) {
   const despesaRef = doc(db, 'despesas', id);
   await deleteDoc(despesaRef);
+  try {
+    const { excluirNotaFiscal } = await import('./imagens');
+    excluirNotaFiscal(id);
+  } catch {}
 }
 
 export async function buscarDespesa(id: string): Promise<Despesa | null> {
@@ -55,25 +62,47 @@ export async function buscarDespesa(id: string): Promise<Despesa | null> {
 }
 
 export async function listarDespesasPorPropriedade(propriedadeId: string): Promise<Despesa[]> {
-  const q = query(
-    despesasCollection,
-    where('propriedadeId', '==', propriedadeId),
-    orderBy('data', 'desc')
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Despesa));
+  // Evita exigir índice composto (where + orderBy) — ordena no cliente para não quebrar se índice não existir
+  const q = query(despesasCollection, where('propriedadeId', '==', propriedadeId));
+  try {
+    const snapshot = await getDocs(q);
+    const lista = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Despesa));
+    return lista.sort((a, b) => (b.data?.toMillis?.() ?? 0) - (a.data?.toMillis?.() ?? 0));
+  } catch (e: any) {
+    // Fallback se mesmo o where simples falhar, tenta com orderBy e propaga link do console
+    if (e?.code === 'failed-precondition' || e?.message?.includes('requires an index')) {
+      console.warn('Índice Firestore faltando para despesas: crie via link no erro ou rode: firebase deploy --only firestore:indexes');
+    }
+    throw e;
+  }
 }
 
 export async function listarDespesasPorTalhao(talhaoId: string): Promise<Despesa[]> {
-  const q = query(
-    despesasCollection,
-    where('talhaoId', '==', talhaoId),
-    orderBy('data', 'desc')
-  );
+  const q = query(despesasCollection, where('talhaoId', '==', talhaoId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Despesa));
+  const lista = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Despesa));
+  return lista.sort((a, b) => (b.data?.toMillis?.() ?? 0) - (a.data?.toMillis?.() ?? 0));
 }
 
 export function totalDespesas(despesas: Despesa[]): number {
-  return despesas.reduce((soma, d) => soma + d.valor, 0);
+  return despesas.reduce((soma, d) => soma + (typeof d.valor === 'number' ? d.valor : 0), 0);
+}
+
+export function totalDespesasMes(despesas: Despesa[], ano: number, mes: number): number {
+  return despesas
+    .filter((d) => {
+      const dt = d.data?.toDate?.();
+      if (!dt) return false;
+      return dt.getFullYear() === ano && dt.getMonth() === mes;
+    })
+    .reduce((s, d) => s + (typeof d.valor === 'number' ? d.valor : 0), 0);
+}
+
+export function totalDespesasAno(despesas: Despesa[], ano: number): number {
+  return despesas
+    .filter((d) => {
+      const dt = d.data?.toDate?.();
+      return dt?.getFullYear() === ano;
+    })
+    .reduce((s, d) => s + (typeof d.valor === 'number' ? d.valor : 0), 0);
 }
