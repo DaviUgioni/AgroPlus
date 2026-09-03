@@ -5,6 +5,7 @@ import { useNavigation, useRoute, useFocusEffect, RouteProp, NavigationProp } fr
 import { Feather } from '@expo/vector-icons';
 import { buscarPropriedade, excluirPropriedade, Propriedade } from '../Services/propriedades';
 import { listarTalhoes, excluirTalhao, Talhao } from '../Services/talhoes';
+import { listarDespesasPorTalhao, totalDespesas } from '../Services/despesas';
 import { RootStackParamList } from '../App';
 
 type DetalheRouteProp = RouteProp<RootStackParamList, 'PropriedadeDetalhe'>;
@@ -17,6 +18,7 @@ export default function PropriedadeDetalhe() {
 
   const [propriedade, setPropriedade] = useState<Propriedade | null>(null);
   const [talhoes, setTalhoes] = useState<Talhao[]>([]);
+  const [totaisPorTalhao, setTotaisPorTalhao] = useState<Record<string, number>>({});
   const [carregando, setCarregando] = useState(true);
 
   async function carregarDados() {
@@ -28,6 +30,24 @@ export default function PropriedadeDetalhe() {
       ]);
       setPropriedade(prop);
       setTalhoes(listaTalhoes);
+      // totais por talhão para controle fino
+      if (listaTalhoes.length > 0) {
+        const totais = await Promise.all(
+          listaTalhoes.map(async (t) => {
+            try {
+              const desps = await listarDespesasPorTalhao(t.id!);
+              return [t.id!, totalDespesas(desps)] as const;
+            } catch {
+              return [t.id!, 0] as const;
+            }
+          })
+        );
+        const map: Record<string, number> = {};
+        totais.forEach(([id, v]) => (map[id] = v));
+        setTotaisPorTalhao(map);
+      } else {
+        setTotaisPorTalhao({});
+      }
     } catch (error) {
       console.log('Erro ao carregar detalhe:', error);
       Alert.alert('Erro', 'Não foi possível carregar os dados.');
@@ -158,12 +178,26 @@ export default function PropriedadeDetalhe() {
           }
           renderItem={({ item }) => (
             <View style={styles.talhaoItem}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.talhaoNome}>{item.nome}</Text>
-                <Text style={styles.talhaoInfo}>{item.area} ha</Text>
+                <Text style={styles.talhaoInfo}>
+                  {item.area} ha • {(totaisPorTalhao[item.id!] ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </Text>
               </View>
 
               <View style={styles.talhaoAcoes}>
+                <TouchableOpacity
+                  style={styles.acaoBotao}
+                  onPress={() => navigation.navigate('DespesasLista', { propriedadeId, talhaoId: item.id, talhaoNome: item.nome })}
+                >
+                  <Feather name="list" size={18} color="#3B6D11" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.acaoBotao}
+                  onPress={() => navigation.navigate('DespesaForm', { propriedadeId, talhaoId: item.id })}
+                >
+                  <Feather name="plus-circle" size={18} color="#3B6D11" />
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.acaoBotao}
                   onPress={() =>

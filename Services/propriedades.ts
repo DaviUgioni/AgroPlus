@@ -11,6 +11,7 @@ export interface Propriedade {
   areaTotal: number;
   userId: string;
   imagemUrl?: string;
+  limiteMensal?: number;
 }
 
 export async function criarPropriedade(dados: Omit<Propriedade, 'id'>) {
