@@ -7,6 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
+import { COLORS, RADIUS } from '../constants/theme';
 
 type DespesasNavigationProp = NavigationProp<RootStackParamList, 'Despesas'>;
 
@@ -48,7 +49,7 @@ export default function Despesas() {
       <Text style={styles.subtitulo}>Escolha uma propriedade para ver as despesas</Text>
 
       {carregando ? (
-        <ActivityIndicator size="large" color="#3B6D11" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
       ) : propriedades.length === 0 ? (
         <Text style={styles.vazio}>Nenhuma propriedade cadastrada ainda.</Text>
       ) : (
@@ -108,8 +109,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F1EFE8',
-    borderRadius: 10,
+    backgroundColor: COLORS.bege,
+    borderRadius: RADIUS.md,
     padding: 14,
     marginBottom: 10,
   },

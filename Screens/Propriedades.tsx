@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
+import { COLORS, RADIUS } from '../constants/theme';
 
 type PropriedadesNavigationProp = NavigationProp<RootStackParamList, 'Propriedades'>;
 
@@ -45,7 +46,7 @@ export default function Propriedades() {
       <Text style={styles.titulo}>Minhas propriedades</Text>
 
       {carregando ? (
-        <ActivityIndicator size="large" color="#3B6D11" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
       ) : propriedades.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.vazio}>Nenhuma propriedade cadastrada ainda.</Text>
@@ -118,8 +119,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F1EFE8',
-    borderRadius: 10,
+    backgroundColor: COLORS.bege,
+    borderRadius: RADIUS.md,
     padding: 14,
     marginBottom: 10,
     gap: 12,
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
   itemImagem: {
     width: 48,
     height: 48,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     backgroundColor: '#ddd',
   },
   itemTexto: {
@@ -147,8 +148,8 @@ const styles = StyleSheet.create({
     left: 24,
     right: 24,
     height: 52,
-    borderRadius: 10,
-    backgroundColor: '#3B6D11',
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.verde,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { signOut } from 'firebase/auth';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
+import { COLORS, RADIUS } from '../constants/theme';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -26,7 +27,7 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <TouchableOpacity onPress={handleSair} style={[styles.sairBtn, { top: insets.top + 8 }]}>
-        <Ionicons name="log-out-outline" size={18} color="#3B6D11" />
+        <Ionicons name="log-out-outline" size={18} color={COLORS.verde} />
         <Text style={styles.sairTexto}>Sair</Text>
       </TouchableOpacity>
       <Text style={styles.titulo}>Bem-vindo ao AgroPlus</Text>
@@ -80,8 +81,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   card: {
-    backgroundColor: '#3B6D11',
-    borderRadius: 16,
+    backgroundColor: COLORS.verde,
+    borderRadius: RADIUS.lg,
     padding: 24,
     alignItems: 'center',
     gap: 12,
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   sairTexto: {
-    color: '#3B6D11',
+    color: COLORS.verde,
     fontSize: 14,
     fontWeight: '500',
   },

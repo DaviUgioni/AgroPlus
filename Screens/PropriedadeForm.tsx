@@ -1,6 +1,6 @@
 // Screens/PropriedadeForm.tsx
 import { useState, useEffect, useCallback } from 'react';
-import {View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Image} from 'react-native';
+import {View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Image, ScrollView} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { auth } from '../FirebaseConfig';
 import { criarPropriedade, buscarPropriedade, atualizarPropriedade, type Propriedade } from '../Services/propriedades';
 import { enviarImagemPropriedade } from '../Services/imagens';
 import { RootStackParamList } from '../App';
+import { COLORS, RADIUS } from '../constants/theme';
 
 type PropriedadeFormRouteProp = RouteProp<RootStackParamList, 'PropriedadeForm'>;
 type PropriedadeFormNavigationProp = NavigationProp<RootStackParamList, 'PropriedadeForm'>;
@@ -56,9 +57,14 @@ export default function PropriedadeForm() {
       const propriedade = await buscarPropriedade(propriedadeId!);
       if (propriedade) {
         setNome(propriedade.nome);
-        setLocalizacao(propriedade.localizacao);
-        setLatitude(propriedade.latitude);
-        setLongitude(propriedade.longitude);
+        // Se já há params de mapa (retorno), não sobrescreve localização
+        const p = route.params as any;
+        const temRetornoMapa = p?.latitude !== undefined && p?.longitude !== undefined;
+        if (!temRetornoMapa) {
+          setLocalizacao(propriedade.localizacao);
+          setLatitude(propriedade.latitude);
+          setLongitude(propriedade.longitude);
+        }
         setAreaTotal(String(propriedade.areaTotal));
         setImagemUrl(propriedade.imagemUrl);
       }
@@ -93,6 +99,7 @@ export default function PropriedadeForm() {
     navigation.navigate('MapaSelecao', {
       latitude,
       longitude,
+      propriedadeId,
     });
   };
 
@@ -158,87 +165,101 @@ export default function PropriedadeForm() {
   if (carregando) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B6D11" />
+        <ActivityIndicator size="large" color={COLORS.verde} />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.titulo}>{modoEdicao ? 'Editar propriedade' : 'Nova propriedade'}</Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.titulo}>{modoEdicao ? 'Editar propriedade' : 'Nova propriedade'}</Text>
 
-      <Text style={styles.label}>Imagem</Text>
-      <View style={styles.imagemContainer}>
-        {(imagemLocal || imagemUrl) && (
-          <Image
-            source={{ uri: imagemLocal || imagemUrl }}
-            style={styles.imagemPreview}
-          />
-        )}
-        <View style={styles.imagemBotoes}>
-          <TouchableOpacity style={styles.imagemBotao} onPress={handleEscolherImagem}>
-            <Ionicons name="image-outline" size={20} color="#3B6D11" />
-            <Text style={styles.imagemBotaoTexto}>
-              {imagemLocal || imagemUrl ? 'Trocar imagem' : 'Escolher imagem da galeria'}
-            </Text>
-          </TouchableOpacity>
+        <Text style={styles.label}>Imagem</Text>
+        <View style={styles.imagemContainer}>
           {(imagemLocal || imagemUrl) && (
-            <TouchableOpacity
-              style={styles.imagemBotao}
-              onPress={() => {
-                setImagemLocal(undefined);
-                setImagemUrl(undefined);
-              }}
-            >
-              <Ionicons name="trash-outline" size={20} color="#c0392b" />
-              <Text style={[styles.imagemBotaoTexto, { color: '#c0392b' }]}>Remover</Text>
-            </TouchableOpacity>
+            <Image
+              source={{ uri: imagemLocal || imagemUrl }}
+              style={styles.imagemPreview}
+            />
           )}
+          <View style={styles.imagemBotoes}>
+            <TouchableOpacity style={styles.imagemBotao} onPress={handleEscolherImagem}>
+              <Ionicons name="image-outline" size={20} color={COLORS.verde} />
+              <Text style={styles.imagemBotaoTexto}>
+                {imagemLocal || imagemUrl ? 'Trocar imagem' : 'Escolher imagem da galeria'}
+              </Text>
+            </TouchableOpacity>
+            {(imagemLocal || imagemUrl) && (
+              <TouchableOpacity
+                style={styles.imagemBotao}
+                onPress={() => {
+                  setImagemLocal(undefined);
+                  setImagemUrl(undefined);
+                }}
+              >
+                <Ionicons name="trash-outline" size={20} color="#c0392b" />
+                <Text style={[styles.imagemBotaoTexto, { color: '#c0392b' }]}>Remover</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </View>
 
-      <Text style={styles.label}>Nome da propriedade</Text>
-      <TextInput
-        style={styles.input}
-        value={nome}
-        onChangeText={setNome}
-        placeholder="Sítio Boa Vista"
-      />
-
-      <Text style={styles.label}>Localização</Text>
-      <View style={styles.localizacaoContainer}>
+        <Text style={styles.label}>Nome da propriedade</Text>
         <TextInput
-          style={[styles.input, styles.inputComBotao]}
-          value={localizacao}
-          onChangeText={setLocalizacao}
-          placeholder="Criciúma, SC"
+          style={styles.input}
+          value={nome}
+          onChangeText={setNome}
+          placeholder="Sítio Boa Vista"
         />
-        <TouchableOpacity style={styles.botaoMapa} onPress={handleAbrirMapa}>
-          <Ionicons name="map-outline" size={24} color="#3B6D11" />
-        </TouchableOpacity>
-      </View>
-      {localizacao && (
-        <TouchableOpacity style={styles.botaoLimpar} onPress={handleLimparLocalizacao}>
-          <Text style={styles.botaoLimparTexto}>Remover localização</Text>
-        </TouchableOpacity>
-      )}
 
-      <Text style={styles.label}>Área total (ha)</Text>
-      <TextInput
-        style={styles.input}
-        value={areaTotal}
-        onChangeText={setAreaTotal}
-        placeholder="12.5"
-        keyboardType="numeric"
-      />
-
-      <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
-        {salvando ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.botaoTexto}>Salvar</Text>
+        <Text style={styles.label}>Localização</Text>
+        <View style={styles.localizacaoContainer}>
+          <TextInput
+            style={[styles.input, styles.inputComBotao]}
+            value={localizacao}
+            onChangeText={setLocalizacao}
+            placeholder="Criciúma, SC"
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+          />
+          <TouchableOpacity style={styles.botaoMapa} onPress={handleAbrirMapa}>
+            <Ionicons name="map-outline" size={24} color={COLORS.verde} />
+          </TouchableOpacity>
+        </View>
+        {localizacao ? (
+          <View style={styles.localizacaoPreview}>
+            <Text style={styles.localizacaoPreviewTexto}>{localizacao}</Text>
+          </View>
+        ) : null}
+        {localizacao && (
+          <TouchableOpacity style={styles.botaoLimpar} onPress={handleLimparLocalizacao}>
+            <Text style={styles.botaoLimparTexto}>Remover localização</Text>
+          </TouchableOpacity>
         )}
-      </TouchableOpacity>
+
+        <Text style={styles.label}>Área total (ha)</Text>
+        <TextInput
+          style={styles.input}
+          value={areaTotal}
+          onChangeText={setAreaTotal}
+          placeholder="12.5"
+          keyboardType="numeric"
+        />
+
+        <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
+          {salvando ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.botaoTexto}>Salvar</Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -247,6 +268,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
+    backgroundColor: '#fff',
+  },
+  scrollContent: {
+    paddingBottom: 32,
+    paddingTop: 4,
   },
   loadingContainer: {
     flex: 1,
@@ -267,25 +293,31 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
+    borderColor: COLORS.borda,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     fontSize: 15,
+    backgroundColor: '#fff',
   },
   inputComBotao: {
+    flex: 1,
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
-    paddingRight: 0,
+    minHeight: 52,
+    paddingRight: 10,
+    textAlignVertical: 'top',
   },
   localizacaoContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   botaoMapa: {
-    width: 48,
-    height: 48,
+    width: 52,
+    minHeight: 52,
+    alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: COLORS.borda,
     borderLeftWidth: 0,
     borderTopRightRadius: 8,
     borderBottomRightRadius: 8,
@@ -293,13 +325,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  localizacaoPreview: {
+    marginTop: 8,
+    backgroundColor: COLORS.bege,
+    borderRadius: RADIUS.sm,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e8e0d0',
+  },
+  localizacaoPreviewTexto: {
+    fontSize: 13,
+    color: '#333',
+    lineHeight: 18,
+  },
   imagemContainer: {
     gap: 8,
   },
   imagemPreview: {
     width: '100%',
     height: 160,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     backgroundColor: '#eee',
   },
   imagemBotoes: {
@@ -312,9 +357,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: COLORS.borda,
     paddingVertical: 10,
     paddingHorizontal: 12,
     flex: 1,
@@ -322,7 +367,7 @@ const styles = StyleSheet.create({
   imagemBotaoTexto: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#3B6D11',
+    color: COLORS.verde,
   },
   botaoLimpar: {
     marginTop: 8,
@@ -335,8 +380,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   botao: {
-    backgroundColor: '#3B6D11',
-    borderRadius: 8,
+    backgroundColor: COLORS.verde,
+    borderRadius: RADIUS.sm,
     padding: 14,
     alignItems: 'center',
     marginTop: 24,

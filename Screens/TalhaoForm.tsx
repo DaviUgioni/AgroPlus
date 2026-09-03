@@ -7,6 +7,7 @@ import { buscarPropriedade } from '../Services/propriedades';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
+import { COLORS, RADIUS } from '../constants/theme';
 
 type TalhaoFormRouteProp = RouteProp<RootStackParamList, 'TalhaoForm'>;
 type TalhaoFormNavigationProp = NavigationProp<RootStackParamList, 'TalhaoForm'>;
@@ -101,7 +102,7 @@ export default function TalhaoForm() {
   if (carregando) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B6D11" />
+        <ActivityIndicator size="large" color={COLORS.verde} />
       </SafeAreaView>
     );
   }
@@ -162,14 +163,14 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: COLORS.borda,
+    borderRadius: RADIUS.sm,
     padding: 10,
     fontSize: 15,
   },
   botao: {
-    backgroundColor: '#3B6D11',
-    borderRadius: 8,
+    backgroundColor: COLORS.verde,
+    borderRadius: RADIUS.sm,
     padding: 14,
     alignItems: 'center',
     marginTop: 24,
