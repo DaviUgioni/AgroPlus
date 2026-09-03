@@ -1,53 +1,90 @@
 # AgroPlus
 
-Aplicativo auxiliador de agricultores para a manutenção da terra e plantio.
+App mobile para o produtor rural gerenciar **propriedades, talhões e despesas** com foto, GPS e controle financeiro — o caderno da fazenda no celular.
 
 ## Objetivo Geral
 
-Aplicativo para auxiliar manutenção da terra e plantio.
+Centralizar em um só app o cadastro de áreas e o controle de gastos por propriedade/talhão, com dados na nuvem vinculados ao usuário.
 
-## Objetivos Específicos
+## O que já funciona
 
-### Login / Cadastro
+### Autenticação
+- Cadastro com e-mail e senha (validação ao digitar, borda vermelha, barra de força fraca/média/forte)
+- Login com e-mail/senha, botão mostrar/esconder senha e teclado que não cobre o campo
+- Recuperação de senha por e-mail
+- Login com impressão digital (biometria) quando disponível
+- Sessão persistente: continua logado ao fechar o app (Firebase Auth + AsyncStorage)
 
-- Cadastro de usuário (nome, telefone/e-mail, senha)
-- Login com sessão persistente (continua logado mesmo sem internet)
-- Recuperação de senha
-- Edição de perfil
+### Propriedades e Talhões
+- CRUD de propriedades: nome, localização (texto ou GPS), área total, foto
+- Foto comprimida (800px, 70%) e salva localmente; exclusão limpa o arquivo
+- CRUD de talhões vinculados à propriedade
+- Validação: soma dos talhões não pode ultrapassar a área total
+- Exclusão em cascata: ao excluir propriedade apaga talhões e despesas vinculadas
 
-### Propriedade e Talhões
+### Despesas
+- Cadastro por categoria: insumo, mão de obra, maquinário, outros
+- Campos: descrição, valor (R$), data automática
+- Listagem por propriedade ordenada por data, total gasto (R$) e edição/exclusão na lista
 
-- Cadastro de propriedade (nome, localização, área total)
-- Cadastro de talhões/áreas dentro da propriedade
-- Listagem, edição e exclusão de propriedades e talhões
+### Mapa
+- Seleção de localização tocando no mapa (OpenStreetMap)
+- Botão "Usar minha localização" com GPS
+- Conversão de coordenada para endereço (Nominatim) e retorno para o formulário
 
-### Produtos e Compras (insumos)
+### Outras telas
+- Home com atalhos e botão Sair (dentro da safe area)
+- Plantios e Resumo são placeholders para próximas versões
 
-- Catálogo/lista de produtos (sementes, adubo, defensivos)
-- Busca e filtro por tipo de produto
-- Registro de compra (produto, quantidade, valor, data, fornecedor)
-- Histórico de compras por propriedade/talhão
+## Como funciona o fluxo
 
-### Plantio
+1. **Conta** → cria conta ou entra; fica logado.
+2. **Propriedade** → cadastra fazenda com foto e marca no mapa.
+3. **Talhoes** → divide a fazenda em talhões (app avisa se passar da área).
+4. **Despesas** → lança gastos e vê o total por propriedade.
 
-- Registro de novo plantio (cultura, talhão, data, área usada)
-- Vincular os insumos comprados ao plantio (pra saber o que foi usado onde)
-- Atualização de status do plantio (plantado, em andamento, colhido)
-- Edição e exclusão de registro de plantio
+## Stack
 
-## Como funciona o gerenciamento: da compra de produtos até o plantio
+- **App:** React Native 0.86 + Expo SDK 57 + TypeScript 6 + React Navigation 7
+- **Backend:** Firebase Auth e Firestore (rules e índices em `firestore.rules` / `firestore.indexes.json`)
+- **Mapas/Mídia:** react-native-maps, expo-location, expo-image-picker/manipulator, expo-file-system, expo-local-authentication
 
-1. **Cadastro e login** — o usuário cria sua conta e acessa o app, com sessão persistente mesmo sem internet.
-2. **Cadastro da propriedade e talhões** — o agricultor registra sua propriedade e divide o terreno em talhões/áreas.
-3. **Compra de insumos** — o agricultor consulta o catálogo de produtos (sementes, adubo, defensivos), busca/filtra por tipo, e registra a compra com produto, quantidade, valor, data e fornecedor. O histórico de compras fica disponível por propriedade/talhão.
-4. **Registro de plantio** — o agricultor registra um novo plantio informando cultura, talhão, data e área usada.
-5. **Vínculo entre insumos e plantio** — os insumos comprados são vinculados ao plantio correspondente, permitindo saber o que foi usado onde.
-6. **Acompanhamento do plantio** — o status do plantio é atualizado ao longo do processo (plantado, em andamento, colhido), com possibilidade de edição e exclusão do registro.
+## Estrutura
 
-## Autor(es)
+```
+App.tsx                 # 13 rotas tipadas
+FirebaseConfig.ts       # Auth com persistência AsyncStorage + Firestore
+Services/
+  propriedades.ts       # CRUD propriedades
+  talhoes.ts            # CRUD talhões
+  despesas.ts           # CRUD despesas + total
+  imagens.ts            # compressão e arquivo local
+Screens/
+  Login, CriarConta, Home, Propriedades, PropriedadeForm, PropriedadeDetalhe
+  TalhaoForm, Despesas, DespesasLista, DespesaForm, MapaSelecao, Plantios, Resumo
+```
 
-Davi Ugioni Marcolino
+## Rodar localmente
 
-## Disciplina
+```bash
+npm install
+npx expo start          # Expo Go
+npx expo run:android    # build nativo
+npx expo-doctor         # checar SDK 57
+```
 
-Projeto Integrador — Curso de Informática
+Configure `FirebaseConfig.ts` com seu projeto ou use o já incluso (`agroplus-2df27`). Para Firestore, publique as regras/índices:
+
+```bash
+firebase deploy --only firestore
+```
+
+## Roadmap curto
+
+- Filtros e totais por mês/categoria, exportar PDF
+- Plantios (cultura, datas) e Resumo com gráficos
+- Fotos na nuvem (Storage) e mapa offline
+
+## Autor
+
+Davi Ugioni Marcolino — Projeto Integrador, Curso de Informática
