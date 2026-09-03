@@ -1,7 +1,10 @@
 // firebaseConfig.ts
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { initializeAuth, getAuth } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// @ts-ignore - getReactNativePersistence is available in firebase/auth React Native
+import { getReactNativePersistence } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDDkgy2yP0d6tzkd5qoWkkeuKocdDWrM4s',
@@ -15,4 +18,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
-export const auth = getAuth(app);
+
+// Persistência de login: mantém usuário logado ao fechar o app
+let authInstance;
+try {
+  authInstance = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+} catch {
+  authInstance = getAuth(app);
+}
+export const auth = authInstance;

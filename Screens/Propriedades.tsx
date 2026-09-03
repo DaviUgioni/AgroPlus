@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, FlatList, ActivityIndicator, Alert, Image} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { auth } from '../FirebaseConfig';
@@ -11,6 +11,7 @@ type PropriedadesNavigationProp = NavigationProp<RootStackParamList, 'Propriedad
 
 export default function Propriedades() {
   const navigation = useNavigation<PropriedadesNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [propriedades, setPropriedades] = useState<Propriedade[]>([]);
   const [carregando, setCarregando] = useState(true);
 
@@ -40,7 +41,7 @@ export default function Propriedades() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Text style={styles.titulo}>Minhas propriedades</Text>
 
       {carregando ? (
@@ -77,7 +78,7 @@ export default function Propriedades() {
       )}
 
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { bottom: Math.max(insets.bottom, 12) + 8 }]}
         onPress={() => navigation.navigate('PropriedadeForm')}
       >
         <Feather name="plus" size={20} color="#fff" />
@@ -143,7 +144,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 100,
     left: 24,
     right: 24,
     height: 52,

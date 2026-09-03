@@ -40,18 +40,23 @@ export async function atualizarPropriedade(id: string, dados: Partial<Omit<Propr
 }
 
 export async function excluirPropriedade(id: string) {
-
   const talhoesQuery = query(collection(db, 'talhoes'), where('propriedadeId', '==', id));
-  const talhoesSnapshot = await getDocs(talhoesQuery);
+  const despesasQuery = query(collection(db, 'despesas'), where('propriedadeId', '==', id));
+  const [talhoesSnapshot, despesasSnapshot] = await Promise.all([getDocs(talhoesQuery), getDocs(despesasQuery)]);
 
+  const allDocs = [doc(db, 'propriedades', id), ...talhoesSnapshot.docs.map((d) => d.ref), ...despesasSnapshot.docs.map((d) => d.ref)];
 
-  const batch = writeBatch(db);
-  batch.delete(doc(db, 'propriedades', id));
-  talhoesSnapshot.docs.forEach((talhaoDoc) => {
-    batch.delete(talhaoDoc.ref);
-  });
+  // Firestore batch limit 500 — chunk em lotes de 400
+  for (let i = 0; i < allDocs.length; i += 400) {
+    const chunk = allDocs.slice(i, i + 400);
+    const batch = writeBatch(db);
+    chunk.forEach((ref) => batch.delete(ref as any));
+    await batch.commit();
+  }
 
-  await batch.commit();
-
-  excluirImagemPropriedade(id);
+  try {
+    excluirImagemPropriedade(id);
+  } catch (e) {
+    console.log('Erro ao excluir imagem local:', e);
+  }
 }

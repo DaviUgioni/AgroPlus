@@ -1,6 +1,10 @@
 // App.tsx
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from './FirebaseConfig';
 import Login from './Screens/Login';
 import Home from './Screens/Home';
 import Propriedades from './Screens/Propriedades';
@@ -19,14 +23,14 @@ export type RootStackParamList = {
   Login: undefined;
   Home: undefined;
   Propriedades: undefined;
-  PropriedadeForm: { propriedadeId?: string } | undefined;
+  PropriedadeForm: { propriedadeId?: string; latitude?: number; longitude?: number; endereco?: string } | undefined;
   PropriedadeDetalhe: { propriedadeId: string };
   TalhaoForm: { propriedadeId: string; talhaoId?: string };
   CriarConta: undefined;
-  DespesaForm: { propriedadeId: string; talhaoId?: string };
+  DespesaForm: { propriedadeId: string; talhaoId?: string; despesaId?: string };
   Despesas: undefined;
   DespesasLista: { propriedadeId: string };
-  MapaSelecao: { latitude?: number; longitude?: number; onSelect?: (coords: { latitude: number; longitude: number; endereco?: string }) => void } | undefined;
+  MapaSelecao: { latitude?: number; longitude?: number } | undefined;
   Plantios: undefined;
   Resumo: undefined;
 };
@@ -34,9 +38,28 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [carregandoAuth, setCarregandoAuth] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setCarregandoAuth(false);
+    });
+    return unsub;
+  }, []);
+
+  if (carregandoAuth) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#3B6D11" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName={user ? 'Home' : 'Login'} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Propriedades" component={Propriedades} />

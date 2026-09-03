@@ -8,9 +8,11 @@ function arquivoImagem(propriedadeId: string): File {
 }
 
 export async function enviarImagemPropriedade(uri: string, propriedadeId: string): Promise<string> {
-  if (!IMAGES_DIR.exists) {
-    IMAGES_DIR.create({ intermediates: true });
-  }
+  try {
+    if (!IMAGES_DIR.exists) {
+      IMAGES_DIR.create({ intermediates: true });
+    }
+  } catch {}
 
   const resultado = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 800 } }], {
     compress: 0.7,
@@ -18,6 +20,9 @@ export async function enviarImagemPropriedade(uri: string, propriedadeId: string
   });
 
   const destino = arquivoImagem(propriedadeId);
+  try {
+    if (destino.exists) destino.delete();
+  } catch {}
   const origem = new File(resultado.uri);
   origem.copy(destino);
 
