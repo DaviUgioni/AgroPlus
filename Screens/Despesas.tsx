@@ -8,6 +8,7 @@ import { auth } from '../FirebaseConfig';
 import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import BotaoVoltar from '../Components/BotaoVoltar';
 
 type DespesasNavigationProp = NavigationProp<RootStackParamList, 'Despesas'>;
 
@@ -43,6 +44,7 @@ export default function Despesas() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <BotaoVoltar />
         <Text style={styles.titulo}>Despesas</Text>
       </View>
 
@@ -85,7 +87,6 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 12,
     marginBottom: 4,

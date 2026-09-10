@@ -10,6 +10,7 @@ import { criarPropriedade, buscarPropriedade, atualizarPropriedade, type Proprie
 import { enviarImagemPropriedade } from '../Services/imagens';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import BotaoVoltar from '../Components/BotaoVoltar';
 
 type PropriedadeFormRouteProp = RouteProp<RootStackParamList, 'PropriedadeForm'>;
 type PropriedadeFormNavigationProp = NavigationProp<RootStackParamList, 'PropriedadeForm'>;
@@ -177,7 +178,10 @@ export default function PropriedadeForm() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.titulo}>{modoEdicao ? 'Editar propriedade' : 'Nova propriedade'}</Text>
+        <View style={styles.headerRow}>
+          <BotaoVoltar />
+          <Text style={styles.titulo}>{modoEdicao ? 'Editar propriedade' : 'Nova propriedade'}</Text>
+        </View>
 
         <Text style={styles.label}>Imagem</Text>
         <View style={styles.imagemContainer}>
@@ -279,11 +283,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
   titulo: {
     fontSize: 20,
     fontWeight: '500',
-    marginTop: 12,
-    marginBottom: 16,
   },
   label: {
     fontSize: 13,

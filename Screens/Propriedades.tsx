@@ -7,6 +7,7 @@ import { auth } from '../FirebaseConfig';
 import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import BotaoVoltar from '../Components/BotaoVoltar';
 
 type PropriedadesNavigationProp = NavigationProp<RootStackParamList, 'Propriedades'>;
 
@@ -43,7 +44,10 @@ export default function Propriedades() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <Text style={styles.titulo}>Minhas propriedades</Text>
+      <View style={styles.headerRow}>
+        <BotaoVoltar />
+        <Text style={styles.titulo}>Minhas propriedades</Text>
+      </View>
 
       {carregando ? (
         <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
@@ -96,12 +100,15 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
     alignContent:'center'
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 20,
+  },
   titulo: {
     fontSize: 24,
     fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 20,
-    alignItems:'center'
   },
   emptyContainer: {
     flex: 1,
