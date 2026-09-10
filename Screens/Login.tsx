@@ -12,6 +12,7 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Keyboard,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
@@ -130,9 +131,7 @@ export default function Login() {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.container}>
-            <View style={styles.iconeApp}>
-              <Feather name="feather" size={36} color="white" />
-            </View>
+            <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
 
             <Text style={styles.titulo}>Bem-vindo ao AgroPlus</Text>
             <Text style={styles.subtitulo}>Gerencie sua produção com facilidade</Text>
@@ -222,14 +221,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#fff',
   },
-  iconeApp: {
-    width: 72,
-    height: 72,
-    borderRadius: 18,
-    backgroundColor: VERDE,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
+  logo: {
+    width: 96,
+    height: 96,
+    marginBottom: 16,
   },
   titulo: {
     fontSize: 22,
