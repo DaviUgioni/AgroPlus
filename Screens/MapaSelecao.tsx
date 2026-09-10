@@ -138,8 +138,8 @@ export default function MapaSelecao() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 8) }]}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 12 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.botaoVoltar}>
           <Text style={styles.botaoVoltarTexto}>Cancelar</Text>
         </TouchableOpacity>
