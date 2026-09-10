@@ -186,7 +186,7 @@ export default function MapaSelecao() {
       </MapView>
 
       {!localizacaoSelecionada && (
-        <View style={styles.dicaContainer}>
+        <View style={[styles.dicaContainer, { bottom: 72 + insets.bottom }]}>
           <Text style={styles.dicaTexto}>📍 Toque no mapa para selecionar • Arraste o pino para ajustar</Text>
         </View>
       )}
@@ -345,7 +345,6 @@ const styles = StyleSheet.create({
   },
   dicaContainer: {
     position: 'absolute',
-    bottom: 72,
     left: 12,
     right: 12,
     backgroundColor: 'rgba(34,34,34,0.9)',

@@ -8,6 +8,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import BotaoVoltar from '../Components/BotaoVoltar';
 
 type TalhaoFormRouteProp = RouteProp<RootStackParamList, 'TalhaoForm'>;
 type TalhaoFormNavigationProp = NavigationProp<RootStackParamList, 'TalhaoForm'>;
@@ -109,7 +110,10 @@ export default function TalhaoForm() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.titulo}>{modoEdicao ? 'Editar talhão' : 'Novo talhão'}</Text>
+      <View style={styles.headerRow}>
+        <BotaoVoltar />
+        <Text style={styles.titulo}>{modoEdicao ? 'Editar talhão' : 'Novo talhão'}</Text>
+      </View>
 
       <Text style={styles.label}>Nome do talhão</Text>
       <TextInput
@@ -149,11 +153,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
   titulo: {
     fontSize: 20,
     fontWeight: '500',
-    marginTop: 12,
-    marginBottom: 16,
   },
   label: {
     fontSize: 13,
