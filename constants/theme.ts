@@ -2,7 +2,7 @@ export const COLORS = {
   verde: '#1A9E4A', // verde mais vivo (atualizado a pedido)
   verdeEscuro: '#0F6E56', // anterior, mantido como alias
   verdeClaro: '#3B6D11', // alias legado
-  bege: '#F1EFE8',
+  bege: '#E4DEC9', // escurecido para melhorar contraste/legibilidade (era #F1EFE8)
   begeClaro: '#FAF8F3',
   cinza: '#666',
   cinzaClaro: '#888',
