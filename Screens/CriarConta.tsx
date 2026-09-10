@@ -13,12 +13,14 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import BotaoVoltar from '../Components/BotaoVoltar';
 
 type CriarContaNavigationProp = NavigationProp<RootStackParamList, 'CriarConta'>;
 
@@ -98,15 +100,19 @@ export default function CriarConta() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#fff' }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.container}>
-            <Text style={styles.title}>Criar conta</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <View style={styles.header}>
+        <BotaoVoltar />
+      </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.container}>
+              <Text style={styles.title}>Criar conta</Text>
 
             <Text style={styles.label}>E-mail</Text>
             <TextInput
@@ -187,11 +193,18 @@ export default function CriarConta() {
           </View>
         </TouchableWithoutFeedback>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 8,
+  },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',

@@ -21,6 +21,7 @@ import { doc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import BotaoVoltar from '../Components/BotaoVoltar';
 
 type DespesasListaRouteProp = RouteProp<RootStackParamList, 'DespesasLista'>;
 type NavProp = NavigationProp<RootStackParamList>;
@@ -188,6 +189,7 @@ export default function DespesasLista() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
+        <BotaoVoltar style={styles.botaoVoltar} />
         <View style={{ flex: 1, flexShrink: 1, marginRight: 12 }}>
           <Text style={styles.titulo} numberOfLines={1}>
             {modoTalhao ? `Despesas — ${talhaoNome ?? 'Talhão'}` : 'Despesas'}
@@ -339,6 +341,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 2,
+  },
+  botaoVoltar: {
+    marginRight: 4,
+    marginLeft: -6,
+    padding: 6,
   },
   exportBtn: {
     flexDirection: 'row',

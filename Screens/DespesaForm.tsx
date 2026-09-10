@@ -11,6 +11,7 @@ import { listarTalhoes, Talhao } from '../Services/talhoes';
 import { enviarNotaFiscal } from '../Services/imagens';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import BotaoVoltar from '../Components/BotaoVoltar';
 
 type DespesaFormRouteProp = RouteProp<RootStackParamList, 'DespesaForm'>;
 type DespesaFormNavProp = NavigationProp<RootStackParamList, 'DespesaForm'>;
@@ -161,7 +162,10 @@ export default function DespesaForm() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-        <Text style={styles.titulo}>{modoEdicao ? 'Editar Despesa' : 'Nova Despesa'}</Text>
+        <View style={styles.headerRow}>
+          <BotaoVoltar />
+          <Text style={styles.titulo}>{modoEdicao ? 'Editar Despesa' : 'Nova Despesa'}</Text>
+        </View>
 
         <Text style={styles.label}>Categoria</Text>
         <View style={styles.input}>
@@ -266,11 +270,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
   titulo: {
     fontSize: 20,
     fontWeight: '500',
-    marginTop: 12,
-    marginBottom: 16,
   },
   label: {
     fontSize: 13,

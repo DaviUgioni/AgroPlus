@@ -8,6 +8,7 @@ import { listarTalhoes, excluirTalhao, Talhao } from '../Services/talhoes';
 import { listarDespesasPorTalhao, totalDespesas } from '../Services/despesas';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import BotaoVoltar from '../Components/BotaoVoltar';
 
 type DetalheRouteProp = RouteProp<RootStackParamList, 'PropriedadeDetalhe'>;
 type DetalheNavigationProp = NavigationProp<RootStackParamList, 'PropriedadeDetalhe'>;
@@ -119,6 +120,7 @@ export default function PropriedadeDetalhe() {
   return (
     <SafeAreaView style={[styles.container, { paddingTop: 8, paddingBottom: Math.max(insets.bottom, 12) }]} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
+        <BotaoVoltar style={styles.botaoVoltar} />
         <View style={{ flex: 1, flexShrink: 1, marginRight: 12 }}>
           <Text style={styles.nome} numberOfLines={2}>{propriedade.nome}</Text>
           <Text style={styles.info} numberOfLines={2}>
@@ -297,6 +299,11 @@ const styles = StyleSheet.create({
   },
 
   acaoBotao: {
+    padding: 6,
+  },
+  botaoVoltar: {
+    marginRight: 4,
+    marginLeft: -6,
     padding: 6,
   },
   acaoBotaoIcon: {
