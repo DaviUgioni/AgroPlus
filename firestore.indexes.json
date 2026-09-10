@@ -31,6 +31,14 @@
         { "fieldPath": "propriedadeId", "order": "ASCENDING" },
         { "fieldPath": "criadoEm", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "plantios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propriedadeId", "order": "ASCENDING" },
+        { "fieldPath": "dataPlantio", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
