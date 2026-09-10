@@ -53,7 +53,9 @@ export default function ResumoDespesas() {
       let somaTotal = 0;
 
       for (const prop of propriedades) {
-        const despesas = await listarDespesasPorPropriedade(prop.id!);
+        const despesas = (await listarDespesasPorPropriedade(prop.id!)).filter(
+          (d) => (d.data?.toMillis?.() ?? 0) <= agora.getTime()
+        );
         const valor = periodo === 'mes'
           ? totalDespesasMes(despesas, anoAtual, mesAtual)
           : totalDespesasAno(despesas, anoAtual);
