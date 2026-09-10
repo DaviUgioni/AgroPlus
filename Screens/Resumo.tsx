@@ -1,14 +1,17 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades } from '../Services/propriedades';
 import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, Despesa } from '../Services/despesas';
 import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plantio } from '../Services/plantios';
+import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+
+type ResumoNavigationProp = NavigationProp<RootStackParamList, 'Resumo'>;
 
 interface ProximaColheita {
   propriedadeNome: string;
@@ -18,6 +21,7 @@ interface ProximaColheita {
 }
 
 export default function Resumo() {
+  const navigation = useNavigation<ResumoNavigationProp>();
   const [carregando, setCarregando] = useState(true);
   const [totalPropriedades, setTotalPropriedades] = useState(0);
   const [areaTotal, setAreaTotal] = useState(0);
@@ -96,42 +100,48 @@ export default function Resumo() {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
           <View style={styles.grid}>
-            <View style={styles.card}>
+            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
               <Feather name="map-pin" size={20} color={COLORS.verde} />
               <Text style={styles.cardValor}>{totalPropriedades}</Text>
               <Text style={styles.cardLabel}>Propriedades</Text>
-            </View>
-            <View style={styles.card}>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
               <Feather name="maximize" size={20} color={COLORS.verde} />
               <Text style={styles.cardValor}>{areaTotal} ha</Text>
               <Text style={styles.cardLabel}>Área total</Text>
-            </View>
-            <View style={styles.card}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate('ResumoDespesas', { periodo: 'mes' })}
+            >
               <Feather name="calendar" size={20} color={COLORS.verde} />
               <Text style={styles.cardValor}>{formatarMoeda(gastoMes)}</Text>
               <Text style={styles.cardLabel}>Gasto no mês</Text>
-            </View>
-            <View style={styles.card}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate('ResumoDespesas', { periodo: 'ano' })}
+            >
               <Feather name="trending-up" size={20} color={COLORS.verde} />
               <Text style={styles.cardValor}>{formatarMoeda(gastoAno)}</Text>
               <Text style={styles.cardLabel}>Gasto no ano</Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.destaqueCard}>
+          <TouchableOpacity style={styles.destaqueCard} onPress={() => navigation.navigate('Plantios')}>
             <Feather name="feather" size={20} color="#fff" />
             <Text style={styles.destaqueValor}>{plantiosAtivos}</Text>
             <Text style={styles.destaqueLabel}>{plantiosAtivos === 1 ? 'Plantio ativo' : 'Plantios ativos'}</Text>
-          </View>
+          </TouchableOpacity>
 
           {proximaColheita && (
-            <View style={styles.proximaCard}>
+            <TouchableOpacity style={styles.proximaCard} onPress={() => navigation.navigate('ResumoColheitas')}>
               <Text style={styles.proximaTitulo}>Próxima colheita</Text>
               <Text style={styles.proximaNome}>
                 {proximaColheita.tipoNome} · {proximaColheita.propriedadeNome}
               </Text>
               <Text style={styles.proximaTexto}>{proximaColheita.texto}</Text>
-            </View>
+            </TouchableOpacity>
           )}
         </ScrollView>
       )}

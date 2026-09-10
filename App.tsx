@@ -20,6 +20,8 @@ import Plantios from './Screens/Plantios';
 import PlantiosLista from './Screens/PlantiosLista';
 import PlantioForm from './Screens/PlantioForm';
 import Resumo from './Screens/Resumo';
+import ResumoDespesas from './Screens/ResumoDespesas';
+import ResumoColheitas from './Screens/ResumoColheitas';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -37,6 +39,8 @@ export type RootStackParamList = {
   PlantiosLista: { propriedadeId: string; propriedadeNome?: string };
   PlantioForm: { propriedadeId: string };
   Resumo: undefined;
+  ResumoDespesas: { periodo?: 'mes' | 'ano' } | undefined;
+  ResumoColheitas: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -79,6 +83,8 @@ export default function App() {
         <Stack.Screen name="PlantiosLista" component={PlantiosLista} />
         <Stack.Screen name="PlantioForm" component={PlantioForm} />
         <Stack.Screen name="Resumo" component={Resumo} />
+        <Stack.Screen name="ResumoDespesas" component={ResumoDespesas} />
+        <Stack.Screen name="ResumoColheitas" component={ResumoColheitas} />
       </Stack.Navigator>
     </NavigationContainer>
   );
