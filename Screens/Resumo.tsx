@@ -56,8 +56,9 @@ export default function Resumo() {
         todosPlantios = todosPlantios.concat(plantios.map((p) => ({ ...p, propriedadeNome: prop.nome })));
       }
 
-      setGastoMes(totalDespesasMes(todasDespesas, anoAtual, mesAtual));
-      setGastoAno(totalDespesasAno(todasDespesas, anoAtual));
+      const despesasAteAgora = todasDespesas.filter((d) => (d.data?.toMillis?.() ?? 0) <= agora.getTime());
+      setGastoMes(totalDespesasMes(despesasAteAgora, anoAtual, mesAtual));
+      setGastoAno(totalDespesasAno(despesasAteAgora, anoAtual));
       setPlantiosAtivos(todosPlantios.length);
 
       let maisProxima: ProximaColheita | null = null;
