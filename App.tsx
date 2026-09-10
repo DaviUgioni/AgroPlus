@@ -17,6 +17,8 @@ import Despesas from './Screens/Despesas';
 import DespesasLista from './Screens/DespesasLista';
 import MapaSelecao from './Screens/MapaSelecao';
 import Plantios from './Screens/Plantios';
+import PlantiosLista from './Screens/PlantiosLista';
+import PlantioForm from './Screens/PlantioForm';
 import Resumo from './Screens/Resumo';
 
 export type RootStackParamList = {
@@ -32,6 +34,8 @@ export type RootStackParamList = {
   DespesasLista: { propriedadeId: string; talhaoId?: string; talhaoNome?: string };
   MapaSelecao: { latitude?: number; longitude?: number; propriedadeId?: string } | undefined;
   Plantios: undefined;
+  PlantiosLista: { propriedadeId: string; propriedadeNome?: string };
+  PlantioForm: { propriedadeId: string };
   Resumo: undefined;
 };
 
@@ -72,6 +76,8 @@ export default function App() {
         <Stack.Screen name="DespesasLista" component={DespesasLista} />
         <Stack.Screen name="MapaSelecao" component={MapaSelecao} />
         <Stack.Screen name="Plantios" component={Plantios} />
+        <Stack.Screen name="PlantiosLista" component={PlantiosLista} />
+        <Stack.Screen name="PlantioForm" component={PlantioForm} />
         <Stack.Screen name="Resumo" component={Resumo} />
       </Stack.Navigator>
     </NavigationContainer>
