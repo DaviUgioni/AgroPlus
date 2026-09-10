@@ -1,6 +1,6 @@
 // Screens/Home.tsx
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -30,6 +30,7 @@ export default function Home() {
         <Ionicons name="log-out-outline" size={18} color={COLORS.verde} />
         <Text style={styles.sairTexto}>Sair</Text>
       </TouchableOpacity>
+      <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.titulo}>Bem-vindo ao AgroPlus</Text>
       <Text style={styles.subtitulo}>Gerencie sua produção com facilidade</Text>
 
@@ -63,6 +64,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: 'center',
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   titulo: {
     fontSize: 24,
