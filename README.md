@@ -53,7 +53,7 @@ Centralizar em um só app o cadastro de áreas e o controle de gastos por propri
 
 ```
 App.tsx                 # 13 rotas tipadas
-FirebaseConfig.ts       # Auth com persistência AsyncStorage + Firestore
+FirebaseConfig.example.ts  # modelo de config do Auth/Firestore (copie para FirebaseConfig.ts)
 Services/
   propriedades.ts       # CRUD propriedades
   talhoes.ts            # CRUD talhões
@@ -73,7 +73,7 @@ npx expo run:android    # build nativo
 npx expo-doctor         # checar SDK 57
 ```
 
-Configure `FirebaseConfig.ts` com seu projeto ou use o já incluso (`agroplus-2df27`). Para Firestore, publique as regras/índices:
+Copie `FirebaseConfig.example.ts` para `FirebaseConfig.ts` e preencha com as credenciais do seu próprio projeto Firebase (o arquivo `FirebaseConfig.ts` não é versionado). Para Firestore, publique as regras/índices:
 
 ```bash
 firebase deploy --only firestore
@@ -88,3 +88,7 @@ firebase deploy --only firestore
 ## Autor
 
 Davi Ugioni Marcolino — Projeto Integrador, Curso de Informática
+
+## Licença
+
+Distribuído sob a licença MIT — veja [LICENSE](LICENSE).
