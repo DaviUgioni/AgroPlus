@@ -8,6 +8,7 @@ import { useNavigation, useRoute, useFocusEffect, RouteProp, NavigationProp } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import { mensagemErro } from '../Services/erros';
 
 type MapaSelecaoRouteProp = RouteProp<RootStackParamList, 'MapaSelecao'>;
 type MapaSelecaoNavigationProp = NavigationProp<RootStackParamList, 'MapaSelecao'>;
@@ -130,7 +131,7 @@ export default function MapaSelecao() {
         }, 1000);
       }
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível obter a localização.');
+      Alert.alert('Erro', mensagemErro(err, 'Não foi possível obter a localização.'));
       console.error(err);
     } finally {
       setLocationLoading(false);
@@ -380,17 +381,5 @@ const styles = StyleSheet.create({
     color: COLORS.verde,
     fontSize: 13,
     fontWeight: '700',
-  },
-  attributionContainer: {
-    position: 'absolute',
-    bottom: 6,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  attributionText: {
-    fontSize: 9,
-    color: '#666',
   },
 });

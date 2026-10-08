@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plan
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type NavProp = NavigationProp<RootStackParamList>;
 
@@ -25,14 +26,15 @@ export default function ResumoColheitas() {
   const navigation = useNavigation<NavProp>();
   const insets = useSafeAreaInsets();
   const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
   const [linhas, setLinhas] = useState<Linha[]>([]);
 
-  async function carregar() {
+  async function carregar(opts?: { silent?: boolean }) {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
 
     try {
-      setCarregando(true);
+      if (!opts?.silent) setCarregando(true);
       const propriedades = await listarPropriedades(userId);
       const todas: Linha[] = [];
 
@@ -53,8 +55,10 @@ export default function ResumoColheitas() {
 
       todas.sort((a, b) => a.diasRestantes - b.diasRestantes);
       setLinhas(todas);
+    } catch (error) {
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar as colheitas.'));
     } finally {
-      setCarregando(false);
+      if (!opts?.silent) setCarregando(false);
     }
   }
 
@@ -63,6 +67,12 @@ export default function ResumoColheitas() {
       carregar();
     }, [])
   );
+
+  async function handleAtualizar() {
+    setAtualizando(true);
+    await carregar({ silent: true });
+    setAtualizando(false);
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -74,12 +84,16 @@ export default function ResumoColheitas() {
       {carregando ? (
         <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
       ) : linhas.length === 0 ? (
-        <Text style={styles.vazio}>Nenhum plantio cadastrado ainda.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.vazio}>Nenhum plantio cadastrado ainda.</Text>
+        </View>
       ) : (
         <FlatList
           data={linhas}
           keyExtractor={(item) => item.plantio.id!}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
+          refreshing={atualizando}
+          onRefresh={handleAtualizar}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.item}
@@ -124,10 +138,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '500',
   },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
   vazio: {
     textAlign: 'center',
     color: '#888',
-    marginTop: 40,
     fontSize: 14,
   },
   item: {

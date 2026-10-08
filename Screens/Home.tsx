@@ -15,13 +15,22 @@ export default function Home() {
   const navigation = useNavigation<HomeNavigationProp>();
   const insets = useSafeAreaInsets();
 
-  async function handleSair() {
-    try {
-      await signOut(auth);
-      navigation.navigate('Login' as never);
-    } catch {
-      Alert.alert('Erro', 'Não foi possível sair.');
-    }
+  function handleSair() {
+    Alert.alert('Sair', 'Deseja realmente sair da sua conta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut(auth);
+            navigation.navigate('Login' as never);
+          } catch {
+            Alert.alert('Erro', 'Não foi possível sair.');
+          }
+        },
+      },
+    ]);
   }
 
   return (

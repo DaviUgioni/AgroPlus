@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
@@ -10,6 +10,7 @@ import { TIPOS_PLANTIO, buscarTipoPlantio } from '../constants/plantios';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type PlantioFormRouteProp = RouteProp<RootStackParamList, 'PlantioForm'>;
 type PlantioFormNavProp = NavigationProp<RootStackParamList, 'PlantioForm'>;
@@ -50,7 +51,7 @@ export default function PlantioForm() {
       Alert.alert('Sucesso', 'Plantio cadastrado!');
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert('Erro', error?.message || 'Não foi possível salvar.');
+      Alert.alert('Erro', mensagemErro(error, error?.message || 'Não foi possível salvar.'));
     } finally {
       setSalvando(false);
     }
@@ -58,35 +59,37 @@ export default function PlantioForm() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-        <View style={styles.headerRow}>
-          <BotaoVoltar />
-          <Text style={styles.titulo}>Novo Plantio</Text>
-        </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          <View style={styles.headerRow}>
+            <BotaoVoltar />
+            <Text style={styles.titulo}>Novo Plantio</Text>
+          </View>
 
-        <Text style={styles.label}>Talhão</Text>
-        <View style={styles.input}>
-          <Picker selectedValue={talhaoSel ?? 'geral'} onValueChange={(v) => setTalhaoSel(v === 'geral' ? undefined : (v as string))} style={styles.picker}>
-            <Picker.Item label="Geral — propriedade toda" value="geral" />
-            {talhoes.map((t) => (
-              <Picker.Item key={t.id} label={t.nome} value={t.id} />
-            ))}
-          </Picker>
-        </View>
+          <Text style={styles.label}>Talhão</Text>
+          <View style={styles.input}>
+            <Picker selectedValue={talhaoSel ?? 'geral'} onValueChange={(v) => setTalhaoSel(v === 'geral' ? undefined : (v as string))} style={styles.picker}>
+              <Picker.Item label="Geral — propriedade toda" value="geral" />
+              {talhoes.map((t) => (
+                <Picker.Item key={t.id} label={t.nome} value={t.id} />
+              ))}
+            </Picker>
+          </View>
 
-        <Text style={styles.label}>Tipo de plantio</Text>
-        <View style={styles.input}>
-          <Picker selectedValue={tipoSel} onValueChange={(v) => setTipoSel(v as string)} style={styles.picker}>
-            {TIPOS_PLANTIO.map((t) => (
-              <Picker.Item key={t.chave} label={`${t.nome} (~${t.diasParaColheita} dias até a colheita)`} value={t.chave} />
-            ))}
-          </Picker>
-        </View>
+          <Text style={styles.label}>Tipo de plantio</Text>
+          <View style={styles.input}>
+            <Picker selectedValue={tipoSel} onValueChange={(v) => setTipoSel(v as string)} style={styles.picker}>
+              {TIPOS_PLANTIO.map((t) => (
+                <Picker.Item key={t.chave} label={`${t.nome} (~${t.diasParaColheita} dias até a colheita)`} value={t.chave} />
+              ))}
+            </Picker>
+          </View>
 
-        <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
-          {salvando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botaoTexto}>Salvar</Text>}
-        </TouchableOpacity>
-      </ScrollView>
+          <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
+            {salvando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botaoTexto}>Salvar</Text>}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, Categ
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type ResumoDespesasRouteProp = RouteProp<RootStackParamList, 'ResumoDespesas'>;
 type NavProp = NavigationProp<RootStackParamList>;
@@ -33,16 +34,17 @@ export default function ResumoDespesas() {
   const [periodo, setPeriodo] = useState<'mes' | 'ano'>(route.params?.periodo ?? 'mes');
 
   const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
   const [total, setTotal] = useState(0);
   const [porPropriedade, setPorPropriedade] = useState<LinhaPropriedade[]>([]);
   const [porCategoria, setPorCategoria] = useState<{ categoria: CategoriaDespesa; valor: number }[]>([]);
 
-  async function carregar() {
+  async function carregar(opts?: { silent?: boolean }) {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
 
     try {
-      setCarregando(true);
+      if (!opts?.silent) setCarregando(true);
       const propriedades = await listarPropriedades(userId);
       const agora = new Date();
       const anoAtual = agora.getFullYear();
@@ -83,8 +85,10 @@ export default function ResumoDespesas() {
           .filter((c) => c.valor > 0)
           .sort((a, b) => b.valor - a.valor)
       );
+    } catch (error) {
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar os gastos.'));
     } finally {
-      setCarregando(false);
+      if (!opts?.silent) setCarregando(false);
     }
   }
 
@@ -93,6 +97,12 @@ export default function ResumoDespesas() {
       carregar();
     }, [periodo])
   );
+
+  async function handleAtualizar() {
+    setAtualizando(true);
+    await carregar({ silent: true });
+    setAtualizando(false);
+  }
 
   const formatarMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -125,6 +135,8 @@ export default function ResumoDespesas() {
           data={porPropriedade}
           keyExtractor={(item) => item.propriedadeId}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
+          refreshing={atualizando}
+          onRefresh={handleAtualizar}
           ListHeaderComponent={
             <>
               <View style={styles.totalCard}>

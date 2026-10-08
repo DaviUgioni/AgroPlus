@@ -9,6 +9,7 @@ import { listarDespesasPorTalhao, totalDespesas } from '../Services/despesas';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type DetalheRouteProp = RouteProp<RootStackParamList, 'PropriedadeDetalhe'>;
 type DetalheNavigationProp = NavigationProp<RootStackParamList, 'PropriedadeDetalhe'>;
@@ -53,7 +54,7 @@ export default function PropriedadeDetalhe() {
       }
     } catch (error) {
       console.log('Erro ao carregar detalhe:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os dados.');
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar os dados.'));
     } finally {
       setCarregando(false);
     }
@@ -76,7 +77,7 @@ export default function PropriedadeDetalhe() {
             await excluirPropriedade(propriedadeId);
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Erro', 'Não foi possível excluir.');
+            Alert.alert('Erro', mensagemErro(error, 'Não foi possível excluir.'));
           }
         },
       },
@@ -94,7 +95,7 @@ export default function PropriedadeDetalhe() {
             await excluirTalhao(talhaoId);
             carregarDados();
           } catch (error) {
-            Alert.alert('Erro', 'Não foi possível excluir o talhão.');
+            Alert.alert('Erro', mensagemErro(error, 'Não foi possível excluir o talhão.'));
           }
         },
       },
@@ -133,6 +134,7 @@ export default function PropriedadeDetalhe() {
             style={styles.acaoBotao}
             onPress={() => navigation.navigate('PropriedadeForm', { propriedadeId })}
             hitSlop={8}
+            accessibilityLabel="Editar propriedade"
           >
             <Feather name="edit-2" size={18} color="#666" />
           </TouchableOpacity>
@@ -141,6 +143,7 @@ export default function PropriedadeDetalhe() {
             style={styles.acaoBotao}
             onPress={handleExcluirPropriedade}
             hitSlop={8}
+            accessibilityLabel="Excluir propriedade"
           >
             <Feather name="trash-2" size={18} color="#c0392b" />
           </TouchableOpacity>

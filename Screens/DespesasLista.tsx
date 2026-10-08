@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type DespesasListaRouteProp = RouteProp<RootStackParamList, 'DespesasLista'>;
 type NavProp = NavigationProp<RootStackParamList>;
@@ -44,18 +45,20 @@ export default function DespesasLista() {
 
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
   const [filtroCat, setFiltroCat] = useState<'todas' | CategoriaDespesa>('todas');
   const [filtroMes, setFiltroMes] = useState<number>(-1); // -1 todos, 0-11
   const [limite, setLimite] = useState<string>('');
   const [limiteSalvo, setLimiteSalvo] = useState<number | undefined>(undefined);
+  const [salvandoLimite, setSalvandoLimite] = useState(false);
 
-  async function carregarDespesas() {
+  async function carregarDespesas(opts?: { silent?: boolean }) {
     if (!propriedadeId) {
       Alert.alert('Erro', 'Propriedade não informada.');
       return;
     }
     try {
-      setCarregando(true);
+      if (!opts?.silent) setCarregando(true);
       const dados = modoTalhao ? await listarDespesasPorTalhao(talhaoId) : await listarDespesasPorPropriedade(propriedadeId);
       const prop = await buscarPropriedade(propriedadeId);
       setDespesas(dados);
@@ -68,9 +71,9 @@ export default function DespesasLista() {
       }
     } catch (error) {
       console.log('ERRO DESPESAS:', error);
-      Alert.alert('Erro', 'Não foi possível carregar as despesas.');
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar as despesas.'));
     } finally {
-      setCarregando(false);
+      if (!opts?.silent) setCarregando(false);
     }
   }
 
@@ -79,6 +82,12 @@ export default function DespesasLista() {
       carregarDespesas();
     }, [propriedadeId, talhaoId])
   );
+
+  async function handleAtualizar() {
+    setAtualizando(true);
+    await carregarDespesas({ silent: true });
+    setAtualizando(false);
+  }
 
   const agora = new Date();
   const anoAtual = agora.getFullYear();
@@ -119,8 +128,8 @@ export default function DespesasLista() {
           try {
             await excluirDespesa(id);
             carregarDespesas();
-          } catch {
-            Alert.alert('Erro', 'Não foi possível excluir.');
+          } catch (error) {
+            Alert.alert('Erro', mensagemErro(error, 'Não foi possível excluir.'));
           }
         },
       },
@@ -135,6 +144,7 @@ export default function DespesasLista() {
       return;
     }
     try {
+      setSalvandoLimite(true);
       const ref = doc(db, 'propriedades', propriedadeId);
       if (limite) {
         await updateDoc(ref, { limiteMensal: v } as any);
@@ -145,8 +155,10 @@ export default function DespesasLista() {
         setLimiteSalvo(undefined);
         Alert.alert('Sucesso', 'Limite removido.');
       }
-    } catch {
-      Alert.alert('Erro', 'Não foi possível salvar o limite.');
+    } catch (error) {
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível salvar o limite.'));
+    } finally {
+      setSalvandoLimite(false);
     }
   }
 
@@ -182,12 +194,13 @@ export default function DespesasLista() {
       }
     } catch (e: any) {
       console.log('Erro export', e);
-      Alert.alert('Erro', 'Não foi possível exportar.');
+      Alert.alert('Erro', mensagemErro(e, 'Não foi possível exportar.'));
     }
   }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.header}>
         <BotaoVoltar style={styles.botaoVoltar} />
         <View style={{ flex: 1, flexShrink: 1, marginRight: 12 }}>
@@ -253,8 +266,12 @@ export default function DespesasLista() {
               placeholder="Ex: 2000"
               keyboardType="numeric"
             />
-            <TouchableOpacity style={styles.limiteBtn} onPress={handleSalvarLimite}>
-              <Text style={styles.limiteBtnTexto}>Salvar</Text>
+            <TouchableOpacity style={styles.limiteBtn} onPress={handleSalvarLimite} disabled={salvandoLimite}>
+              {salvandoLimite ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.limiteBtnTexto}>Salvar</Text>
+              )}
             </TouchableOpacity>
           </View>
           {estourou && <Text style={styles.alerta}>⚠️ Você passou do limite mensal!</Text>}
@@ -264,12 +281,17 @@ export default function DespesasLista() {
       {carregando ? (
         <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
       ) : despesasFiltradas.length === 0 ? (
-        <Text style={styles.vazio}>Nenhuma despesa com esse filtro.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.vazio}>Nenhuma despesa com esse filtro.</Text>
+        </View>
       ) : (
         <FlatList
           data={despesasFiltradas}
           keyExtractor={(item) => item.id!}
           contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+          keyboardShouldPersistTaps="handled"
+          refreshing={atualizando}
+          onRefresh={handleAtualizar}
           renderItem={({ item }) => {
             const isFutura = (item.data?.toMillis?.() ?? 0) > agora.getTime();
             return (
@@ -317,6 +339,7 @@ export default function DespesasLista() {
         <Feather name="plus" size={18} color="#fff" />
         <Text style={styles.fabTexto}>Nova despesa</Text>
       </TouchableOpacity>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -470,10 +493,13 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontWeight: '500',
   },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
   vazio: {
     textAlign: 'center',
     color: '#888',
-    marginTop: 40,
     fontSize: 14,
   },
   item: {
@@ -517,7 +543,7 @@ const styles = StyleSheet.create({
   },
   itemFuturoTexto: {
     fontSize: 11,
-    color: '#8a7d4b',
+    color: '#5c4f26',
     marginTop: 2,
     fontStyle: 'italic',
   },

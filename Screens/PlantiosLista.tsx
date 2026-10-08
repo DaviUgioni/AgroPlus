@@ -7,6 +7,7 @@ import { listarPlantiosPorPropriedade, excluirPlantio, estimativaColheita, texto
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type PlantiosListaRouteProp = RouteProp<RootStackParamList, 'PlantiosLista'>;
 type NavProp = NavigationProp<RootStackParamList>;
@@ -19,16 +20,17 @@ export default function PlantiosLista() {
 
   const [plantios, setPlantios] = useState<Plantio[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
 
-  async function carregarPlantios() {
+  async function carregarPlantios(opts?: { silent?: boolean }) {
     try {
-      setCarregando(true);
+      if (!opts?.silent) setCarregando(true);
       const dados = await listarPlantiosPorPropriedade(propriedadeId);
       setPlantios(dados);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível carregar os plantios.');
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar os plantios.'));
     } finally {
-      setCarregando(false);
+      if (!opts?.silent) setCarregando(false);
     }
   }
 
@@ -37,6 +39,12 @@ export default function PlantiosLista() {
       carregarPlantios();
     }, [propriedadeId])
   );
+
+  async function handleAtualizar() {
+    setAtualizando(true);
+    await carregarPlantios({ silent: true });
+    setAtualizando(false);
+  }
 
   function handleExcluir(id: string) {
     Alert.alert('Excluir plantio', 'Tem certeza que deseja excluir?', [
@@ -48,8 +56,8 @@ export default function PlantiosLista() {
           try {
             await excluirPlantio(id);
             carregarPlantios();
-          } catch {
-            Alert.alert('Erro', 'Não foi possível excluir.');
+          } catch (error) {
+            Alert.alert('Erro', mensagemErro(error, 'Não foi possível excluir.'));
           }
         },
       },
@@ -69,12 +77,16 @@ export default function PlantiosLista() {
       {carregando ? (
         <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
       ) : plantios.length === 0 ? (
-        <Text style={styles.vazio}>Nenhum plantio cadastrado ainda.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.vazio}>Nenhum plantio cadastrado ainda.</Text>
+        </View>
       ) : (
         <FlatList
           data={plantios}
           keyExtractor={(item) => item.id!}
           contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+          refreshing={atualizando}
+          onRefresh={handleAtualizar}
           renderItem={({ item }) => {
             const estimativa = estimativaColheita(item.dataPlantio, item.diasParaColheita);
             return (
@@ -137,10 +149,13 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 2,
   },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
   vazio: {
     textAlign: 'center',
     color: '#888',
-    marginTop: 40,
     fontSize: 14,
   },
   item: {

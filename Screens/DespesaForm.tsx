@@ -1,6 +1,6 @@
 import { Picker } from '@react-native-picker/picker';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Image, Switch, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Image, Switch, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Timestamp } from 'firebase/firestore';
@@ -12,6 +12,7 @@ import { enviarNotaFiscal } from '../Services/imagens';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type DespesaFormRouteProp = RouteProp<RootStackParamList, 'DespesaForm'>;
 type DespesaFormNavProp = NavigationProp<RootStackParamList, 'DespesaForm'>;
@@ -33,6 +34,7 @@ export default function DespesaForm() {
   const [meses, setMeses] = useState<number>(3);
   const [talhoes, setTalhoes] = useState<Talhao[]>([]);
   const [talhaoSel, setTalhaoSel] = useState<string | undefined>(talhaoId);
+  const [progresso, setProgresso] = useState<{ atual: number; total: number } | null>(null);
 
   useEffect(() => {
     if (modoEdicao) carregarDespesa();
@@ -59,7 +61,7 @@ export default function DespesaForm() {
         navigation.goBack();
       }
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível carregar a despesa.');
+      Alert.alert('Erro', mensagemErro(e, 'Não foi possível carregar a despesa.'));
     } finally {
       setCarregando(false);
     }
@@ -79,6 +81,25 @@ export default function DespesaForm() {
     if (!res.canceled) {
       const uri = res.assets?.[0]?.uri;
       if (uri) setNotaLocal(uri);
+    }
+  }
+
+  function handleRemoverNota() {
+    if (notaUrlExistente) {
+      Alert.alert('Remover nota fiscal', 'Tem certeza que deseja remover a nota fiscal anexada a esta despesa?', [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: () => {
+            setNotaLocal(null);
+            setNotaUrlExistente(null);
+          },
+        },
+      ]);
+    } else {
+      setNotaLocal(null);
+      setNotaUrlExistente(null);
     }
   }
 
@@ -121,10 +142,11 @@ export default function DespesaForm() {
         const base = new Date();
         const totalMeses = recorrente ? meses : 1;
         for (let i = 0; i < totalMeses; i++) {
+          if (totalMeses > 1) setProgresso({ atual: i + 1, total: totalMeses });
           const d = new Date(base);
           d.setMonth(base.getMonth() + i);
           const ts = Timestamp.fromDate(d);
-          const id = await criarDespesa({
+          const novaDespesa: any = {
             propriedadeId,
             talhaoId: talhaoFinal,
             categoria,
@@ -133,8 +155,11 @@ export default function DespesaForm() {
             data: ts,
             notaFiscalUri: null,
             recorrente: recorrente && i === 0,
-            recorrenciaMeses: recorrente ? totalMeses : undefined,
-          } as any);
+          };
+          if (recorrente) {
+            novaDespesa.recorrenciaMeses = totalMeses;
+          }
+          const id = await criarDespesa(novaDespesa);
           if (i === 0 && notaLocal) {
             const url = await enviarNotaFiscal(notaLocal, id);
             await atualizarDespesa(id, { notaFiscalUri: url } as any);
@@ -145,9 +170,13 @@ export default function DespesaForm() {
       navigation.goBack();
     } catch (error: any) {
       console.log('Erro ao salvar despesa:', error);
-      Alert.alert('Erro', error?.message || 'Não foi possível salvar.');
+      const fallback = progresso && progresso.atual > 1
+        ? `Não foi possível salvar. ${progresso.atual - 1} de ${progresso.total} parcelas já foram criadas — confira a lista antes de tentar novamente.`
+        : 'Não foi possível salvar.';
+      Alert.alert('Erro', mensagemErro(error, fallback));
     } finally {
       setSalvando(false);
+      setProgresso(null);
     }
   };
 
@@ -161,7 +190,8 @@ export default function DespesaForm() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
         <View style={styles.headerRow}>
           <BotaoVoltar />
           <Text style={styles.titulo}>{modoEdicao ? 'Editar Despesa' : 'Nova Despesa'}</Text>
@@ -218,10 +248,7 @@ export default function DespesaForm() {
             {(notaLocal || notaUrlExistente) && (
               <TouchableOpacity
                 style={styles.notaBtn}
-                onPress={() => {
-                  setNotaLocal(null);
-                  setNotaUrlExistente(null);
-                }}
+                onPress={handleRemoverNota}
               >
                 <Feather name="trash-2" size={16} color="#c0392b" />
                 <Text style={[styles.notaBtnTexto, { color: '#c0392b' }]}>Remover</Text>
@@ -253,9 +280,19 @@ export default function DespesaForm() {
         )}
 
         <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
-          {salvando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botaoTexto}>Salvar</Text>}
+          {salvando ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <ActivityIndicator color="#fff" />
+              {progresso && progresso.total > 1 && (
+                <Text style={styles.botaoTexto}>Salvando {progresso.atual}/{progresso.total}...</Text>
+              )}
+            </View>
+          ) : (
+            <Text style={styles.botaoTexto}>Salvar</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -22,6 +22,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
+import { mensagemErro } from '../Services/erros';
 
 type LoginNavigationProp = NavigationProp<RootStackParamList, 'Login'>;
 
@@ -66,7 +67,7 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, emailNorm, senha);
       navigation.navigate('Home');
     } catch (error: any) {
-      let mensagem = 'Não foi possível entrar.';
+      let mensagem = mensagemErro(error, 'Não foi possível entrar.');
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
         mensagem = 'E-mail ou senha incorretos.';
       } else if (error.code === 'auth/user-not-found') {
@@ -171,7 +172,12 @@ export default function Login() {
                   returnKeyType="done"
                   onSubmitEditing={handleLogin}
                 />
-                <TouchableOpacity onPress={() => setMostrarSenha((v) => !v)} hitSlop={8} style={styles.olhoBtn}>
+                <TouchableOpacity
+                  onPress={() => setMostrarSenha((v) => !v)}
+                  hitSlop={8}
+                  style={styles.olhoBtn}
+                  accessibilityLabel={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                >
                   <Feather name={mostrarSenha ? 'eye-off' : 'eye'} size={18} color="#888780" />
                 </TouchableOpacity>
               </View>
