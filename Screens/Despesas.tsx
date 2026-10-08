@@ -9,6 +9,7 @@ import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type DespesasNavigationProp = NavigationProp<RootStackParamList, 'Despesas'>;
 
@@ -16,8 +17,9 @@ export default function Despesas() {
   const navigation = useNavigation<DespesasNavigationProp>();
   const [propriedades, setPropriedades] = useState<Propriedade[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
 
-  async function carregarPropriedades() {
+  async function carregarPropriedades(opts?: { silent?: boolean }) {
     const userId = auth.currentUser?.uid;
     if (!userId) {
       Alert.alert('Erro', 'Usuário não autenticado.');
@@ -25,13 +27,13 @@ export default function Despesas() {
     }
 
     try {
-      setCarregando(true);
+      if (!opts?.silent) setCarregando(true);
       const dados = await listarPropriedades(userId);
       setPropriedades(dados);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível carregar as propriedades.');
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar as propriedades.'));
     } finally {
-      setCarregando(false);
+      if (!opts?.silent) setCarregando(false);
     }
   }
 
@@ -40,6 +42,12 @@ export default function Despesas() {
       carregarPropriedades();
     }, [])
   );
+
+  async function handleAtualizar() {
+    setAtualizando(true);
+    await carregarPropriedades({ silent: true });
+    setAtualizando(false);
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -53,11 +61,15 @@ export default function Despesas() {
       {carregando ? (
         <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
       ) : propriedades.length === 0 ? (
-        <Text style={styles.vazio}>Nenhuma propriedade cadastrada ainda.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.vazio}>Nenhuma propriedade cadastrada ainda.</Text>
+        </View>
       ) : (
         <FlatList
           data={propriedades}
           keyExtractor={(item) => item.id!}
+          refreshing={atualizando}
+          onRefresh={handleAtualizar}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.item}
@@ -100,10 +112,13 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 16,
   },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
   vazio: {
     textAlign: 'center',
     color: '#888',
-    marginTop: 40,
     fontSize: 14,
   },
   item: {

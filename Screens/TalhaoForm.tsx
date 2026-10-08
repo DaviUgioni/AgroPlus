@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator} from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { criarTalhao, atualizarTalhao, listarTalhoes } from '../Services/talhoes';
@@ -9,6 +9,7 @@ import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type TalhaoFormRouteProp = RouteProp<RootStackParamList, 'TalhaoForm'>;
 type TalhaoFormNavigationProp = NavigationProp<RootStackParamList, 'TalhaoForm'>;
@@ -43,7 +44,7 @@ export default function TalhaoForm() {
         Alert.alert('Erro', 'Talhão não encontrado.');
       }
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível carregar o talhão.');
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar o talhão.'));
     } finally {
       setCarregando(false);
     }
@@ -94,7 +95,7 @@ export default function TalhaoForm() {
       Alert.alert('Sucesso', modoEdicao ? 'Talhão atualizado!' : 'Talhão cadastrado!');
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar. Tente novamente.');
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível salvar. Tente novamente.'));
     } finally {
       setSalvando(false);
     }
@@ -110,35 +111,39 @@ export default function TalhaoForm() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerRow}>
-        <BotaoVoltar />
-        <Text style={styles.titulo}>{modoEdicao ? 'Editar talhão' : 'Novo talhão'}</Text>
-      </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          <View style={styles.headerRow}>
+            <BotaoVoltar />
+            <Text style={styles.titulo}>{modoEdicao ? 'Editar talhão' : 'Novo talhão'}</Text>
+          </View>
 
-      <Text style={styles.label}>Nome do talhão</Text>
-      <TextInput
-        style={styles.input}
-        value={nome}
-        onChangeText={setNome}
-        placeholder="Talhão A"
-      />
+          <Text style={styles.label}>Nome do talhão</Text>
+          <TextInput
+            style={styles.input}
+            value={nome}
+            onChangeText={setNome}
+            placeholder="Talhão A"
+          />
 
-      <Text style={styles.label}>Área (ha)</Text>
-      <TextInput
-        style={styles.input}
-        value={area}
-        onChangeText={setArea}
-        placeholder="5.0"
-        keyboardType="numeric"
-      />
+          <Text style={styles.label}>Área (ha)</Text>
+          <TextInput
+            style={styles.input}
+            value={area}
+            onChangeText={setArea}
+            placeholder="5.0"
+            keyboardType="numeric"
+          />
 
-      <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
-        {salvando ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.botaoTexto}>Salvar</Text>
-        )}
-      </TouchableOpacity>
+          <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
+            {salvando ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.botaoTexto}>Salvar</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

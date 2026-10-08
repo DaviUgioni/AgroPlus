@@ -21,6 +21,7 @@ import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type CriarContaNavigationProp = NavigationProp<RootStackParamList, 'CriarConta'>;
 
@@ -83,7 +84,7 @@ export default function CriarConta() {
       Alert.alert('Sucesso', 'Conta criada com sucesso!');
       navigation.navigate('Home');
     } catch (error: any) {
-      let mensagem = 'Ocorreu um erro ao criar a conta.';
+      let mensagem = mensagemErro(error, 'Ocorreu um erro ao criar a conta.');
       if (error.code === 'auth/email-already-in-use') {
         mensagem = 'Este e-mail já está em uso. Faça login ou recupere a senha.';
         setEmailErro('E-mail já cadastrado.');
@@ -146,7 +147,12 @@ export default function CriarConta() {
                 secureTextEntry={!mostrarSenha}
                 returnKeyType="next"
               />
-              <TouchableOpacity onPress={() => setMostrarSenha((v) => !v)} hitSlop={8} style={styles.olhoBtn}>
+              <TouchableOpacity
+                onPress={() => setMostrarSenha((v) => !v)}
+                hitSlop={8}
+                style={styles.olhoBtn}
+                accessibilityLabel={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+              >
                 <Feather name={mostrarSenha ? 'eye-off' : 'eye'} size={18} color="#888" />
               </TouchableOpacity>
             </View>
@@ -178,7 +184,12 @@ export default function CriarConta() {
                 returnKeyType="done"
                 onSubmitEditing={handleCriarConta}
               />
-              <TouchableOpacity onPress={() => setMostrarConfirmacao((v) => !v)} hitSlop={8} style={styles.olhoBtn}>
+              <TouchableOpacity
+                onPress={() => setMostrarConfirmacao((v) => !v)}
+                hitSlop={8}
+                style={styles.olhoBtn}
+                accessibilityLabel={mostrarConfirmacao ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'}
+              >
                 <Feather name={mostrarConfirmacao ? 'eye-off' : 'eye'} size={18} color="#888" />
               </TouchableOpacity>
             </View>

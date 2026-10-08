@@ -1,6 +1,6 @@
 // Screens/PropriedadeForm.tsx
 import { useState, useEffect, useCallback } from 'react';
-import {View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Image, ScrollView} from 'react-native';
+import {View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { enviarImagemPropriedade } from '../Services/imagens';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type PropriedadeFormRouteProp = RouteProp<RootStackParamList, 'PropriedadeForm'>;
 type PropriedadeFormNavigationProp = NavigationProp<RootStackParamList, 'PropriedadeForm'>;
@@ -71,7 +72,7 @@ export default function PropriedadeForm() {
       }
     } catch (error) {
       console.log('Erro ao carregar propriedade:', error);
-      Alert.alert('Erro', 'Não foi possível carregar a propriedade.');
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar a propriedade.'));
     } finally {
       setCarregando(false);
     }
@@ -108,6 +109,25 @@ export default function PropriedadeForm() {
     setLocalizacao('');
     setLatitude(undefined);
     setLongitude(undefined);
+  };
+
+  const handleRemoverImagem = () => {
+    if (imagemUrl) {
+      Alert.alert('Remover imagem', 'Tem certeza que deseja remover a imagem desta propriedade?', [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: () => {
+            setImagemLocal(undefined);
+            setImagemUrl(undefined);
+          },
+        },
+      ]);
+    } else {
+      setImagemLocal(undefined);
+      setImagemUrl(undefined);
+    }
   };
 
   async function handleSalvar() {
@@ -155,9 +175,7 @@ export default function PropriedadeForm() {
       navigation.goBack();
     } catch (error) {
       console.log('Erro ao salvar propriedade:', error);
-      const mensagem =
-        error instanceof Error ? error.message : 'Não foi possível salvar. Tente novamente.';
-      Alert.alert('Erro', mensagem);
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível salvar. Tente novamente.'));
     } finally {
       setSalvando(false);
     }
@@ -173,6 +191,7 @@ export default function PropriedadeForm() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -201,10 +220,7 @@ export default function PropriedadeForm() {
             {(imagemLocal || imagemUrl) && (
               <TouchableOpacity
                 style={styles.imagemBotao}
-                onPress={() => {
-                  setImagemLocal(undefined);
-                  setImagemUrl(undefined);
-                }}
+                onPress={handleRemoverImagem}
               >
                 <Ionicons name="trash-outline" size={20} color="#c0392b" />
                 <Text style={[styles.imagemBotaoTexto, { color: '#c0392b' }]}>Remover</Text>
@@ -264,6 +280,7 @@ export default function PropriedadeForm() {
           )}
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

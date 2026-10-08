@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plan
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type ResumoNavigationProp = NavigationProp<RootStackParamList, 'Resumo'>;
 
@@ -23,6 +24,7 @@ interface ProximaColheita {
 export default function Resumo() {
   const navigation = useNavigation<ResumoNavigationProp>();
   const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
   const [totalPropriedades, setTotalPropriedades] = useState(0);
   const [areaTotal, setAreaTotal] = useState(0);
   const [gastoMes, setGastoMes] = useState(0);
@@ -30,12 +32,12 @@ export default function Resumo() {
   const [plantiosAtivos, setPlantiosAtivos] = useState(0);
   const [proximaColheita, setProximaColheita] = useState<ProximaColheita | null>(null);
 
-  async function carregar() {
+  async function carregar(opts?: { silent?: boolean }) {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
 
     try {
-      setCarregando(true);
+      if (!opts?.silent) setCarregando(true);
       const propriedades = await listarPropriedades(userId);
       setTotalPropriedades(propriedades.length);
       setAreaTotal(propriedades.reduce((s, p) => s + (p.areaTotal || 0), 0));
@@ -76,8 +78,11 @@ export default function Resumo() {
         }
       }
       setProximaColheita(maisProxima);
+    } catch (error) {
+      console.log('Erro ao carregar resumo:', error);
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar o resumo.'));
     } finally {
-      setCarregando(false);
+      if (!opts?.silent) setCarregando(false);
     }
   }
 
@@ -86,6 +91,12 @@ export default function Resumo() {
       carregar();
     }, [])
   );
+
+  async function handleAtualizar() {
+    setAtualizando(true);
+    await carregar({ silent: true });
+    setAtualizando(false);
+  }
 
   const formatarMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -99,7 +110,11 @@ export default function Resumo() {
       {carregando ? (
         <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          refreshControl={<RefreshControl refreshing={atualizando} onRefresh={handleAtualizar} colors={[COLORS.verde]} tintColor={COLORS.verde} />}
+        >
           <View style={styles.grid}>
             <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
               <Feather name="map-pin" size={20} color={COLORS.verde} />

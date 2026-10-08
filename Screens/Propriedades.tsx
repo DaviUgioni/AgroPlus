@@ -8,6 +8,7 @@ import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
 import { COLORS, RADIUS } from '../constants/theme';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { mensagemErro } from '../Services/erros';
 
 type PropriedadesNavigationProp = NavigationProp<RootStackParamList, 'Propriedades'>;
 
@@ -16,8 +17,9 @@ export default function Propriedades() {
   const insets = useSafeAreaInsets();
   const [propriedades, setPropriedades] = useState<Propriedade[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
 
-  async function carregarPropriedades() {
+  async function carregarPropriedades(opts?: { silent?: boolean }) {
     const userId = auth.currentUser?.uid;
     if (!userId) {
       Alert.alert('Erro', 'Usuário não autenticado.');
@@ -25,14 +27,14 @@ export default function Propriedades() {
     }
 
     try {
-      setCarregando(true);
+      if (!opts?.silent) setCarregando(true);
       const dados = await listarPropriedades(userId);
       setPropriedades(dados);
     } catch (error) {
       console.log('Erro ao listar propriedades:', error);
-      Alert.alert('Erro', 'Não foi possível carregar as propriedades.');
+      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar as propriedades.'));
     } finally {
-      setCarregando(false);
+      if (!opts?.silent) setCarregando(false);
     }
   }
 
@@ -41,6 +43,12 @@ export default function Propriedades() {
       carregarPropriedades();
     }, [])
   );
+
+  async function handleAtualizar() {
+    setAtualizando(true);
+    await carregarPropriedades({ silent: true });
+    setAtualizando(false);
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -60,6 +68,8 @@ export default function Propriedades() {
           data={propriedades}
           keyExtractor={(item) => item.id!}
           contentContainerStyle={styles.listContent}
+          refreshing={atualizando}
+          onRefresh={handleAtualizar}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.item}
