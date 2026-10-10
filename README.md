@@ -12,15 +12,21 @@ Centralizar em um só app o cadastro de áreas e o controle de gastos por propri
 - Cadastro com e-mail e senha (validação ao digitar, borda vermelha, barra de força fraca/média/forte)
 - Login com e-mail/senha, botão mostrar/esconder senha e teclado que não cobre o campo
 - Recuperação de senha por e-mail
-- Login com impressão digital (biometria) quando disponível
+- Bloqueio por impressão digital: com a opção ligada, o app pede a digital ao abrir e ao voltar após 1 min em segundo plano
 - Sessão persistente: continua logado ao fechar o app (Firebase Auth + AsyncStorage)
+
+### Configurações da conta
+- Alterar nome, senha e e-mail (com confirmação da senha atual; o novo e-mail é confirmado por link)
+- Ligar/desligar o desbloqueio por digital
+- Sair e excluir a conta (apaga todas as propriedades, talhões, despesas e plantios)
 
 ### Propriedades e Talhões
 - CRUD de propriedades: nome, localização (texto ou GPS), área total, foto
 - Foto comprimida (800px, 70%) e salva localmente; exclusão limpa o arquivo
 - CRUD de talhões vinculados à propriedade
 - Validação: soma dos talhões não pode ultrapassar a área total
-- Exclusão em cascata: ao excluir propriedade apaga talhões e despesas vinculadas
+- Exclusão em cascata: ao excluir propriedade apaga talhões, despesas e plantios vinculados
+- Estatísticas por propriedade: gasto e custo por hectare (mês/ano/tudo), gastos dos últimos 6 meses, por categoria e por talhão, uso da área, limite mensal e próximas colheitas
 
 ### Despesas
 - Cadastro por categoria: insumo, mão de obra, maquinário, outros
@@ -59,8 +65,10 @@ Services/
   talhoes.ts            # CRUD talhões
   despesas.ts           # CRUD despesas + total
   imagens.ts            # compressão e arquivo local
+  biometria.ts          # preferência e autenticação por digital
+  conta.ts              # nome, senha, e-mail e exclusão da conta
 Screens/
-  Login, CriarConta, Home, Propriedades, PropriedadeForm, PropriedadeDetalhe
+  Login, CriarConta, Home, ConfiguracoesConta, Propriedades, PropriedadeForm, PropriedadeDetalhe, EstatisticasPropriedade
   TalhaoForm, Despesas, DespesasLista, DespesaForm, MapaSelecao, Plantios, Resumo
 ```
 

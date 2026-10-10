@@ -35,6 +35,13 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('ConfiguracoesConta')}
+        style={[styles.configBtn, { top: insets.top + 8 }]}
+        accessibilityLabel="Configurações da conta"
+      >
+        <Ionicons name="settings-outline" size={20} color={COLORS.verde} />
+      </TouchableOpacity>
       <TouchableOpacity onPress={handleSair} style={[styles.sairBtn, { top: insets.top + 8 }]}>
         <Ionicons name="log-out-outline" size={18} color={COLORS.verde} />
         <Text style={styles.sairTexto}>Sair</Text>
@@ -112,6 +119,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  configBtn: {
+    position: 'absolute',
+    left: 16,
+    padding: 8,
   },
   sairBtn: {
     position: 'absolute',

@@ -1,6 +1,6 @@
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where, serverTimestamp, writeBatch,} from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
-import { excluirImagemPropriedade } from './imagens';
+import { excluirImagemPropriedade, excluirNotaFiscal } from './imagens';
 
 export interface Propriedade {
   id?: string;
@@ -43,9 +43,20 @@ export async function atualizarPropriedade(id: string, dados: Partial<Omit<Propr
 export async function excluirPropriedade(id: string) {
   const talhoesQuery = query(collection(db, 'talhoes'), where('propriedadeId', '==', id));
   const despesasQuery = query(collection(db, 'despesas'), where('propriedadeId', '==', id));
-  const [talhoesSnapshot, despesasSnapshot] = await Promise.all([getDocs(talhoesQuery), getDocs(despesasQuery)]);
+  const plantiosQuery = query(collection(db, 'plantios'), where('propriedadeId', '==', id));
+  const [talhoesSnapshot, despesasSnapshot, plantiosSnapshot] = await Promise.all([
+    getDocs(talhoesQuery),
+    getDocs(despesasQuery),
+    getDocs(plantiosQuery),
+  ]);
 
-  const allDocs = [doc(db, 'propriedades', id), ...talhoesSnapshot.docs.map((d) => d.ref), ...despesasSnapshot.docs.map((d) => d.ref)];
+  // A propriedade vai por último: as regras do Firestore checam o dono pela propriedade pai
+  const allDocs = [
+    ...talhoesSnapshot.docs.map((d) => d.ref),
+    ...despesasSnapshot.docs.map((d) => d.ref),
+    ...plantiosSnapshot.docs.map((d) => d.ref),
+    doc(db, 'propriedades', id),
+  ];
 
   // Firestore batch limit 500 — chunk em lotes de 400
   for (let i = 0; i < allDocs.length; i += 400) {
@@ -54,6 +65,8 @@ export async function excluirPropriedade(id: string) {
     chunk.forEach((ref) => batch.delete(ref as any));
     await batch.commit();
   }
+
+  despesasSnapshot.docs.forEach((d) => excluirNotaFiscal(d.id));
 
   try {
     excluirImagemPropriedade(id);

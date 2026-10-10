@@ -132,6 +132,15 @@ export default function PropriedadeDetalhe() {
         <View style={styles.headerAcoes}>
           <TouchableOpacity
             style={styles.acaoBotao}
+            onPress={() => navigation.navigate('EstatisticasPropriedade', { propriedadeId })}
+            hitSlop={8}
+            accessibilityLabel="Estatísticas da propriedade"
+          >
+            <Feather name="bar-chart-2" size={18} color={COLORS.verde} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.acaoBotao}
             onPress={() => navigation.navigate('PropriedadeForm', { propriedadeId })}
             hitSlop={8}
             accessibilityLabel="Editar propriedade"
