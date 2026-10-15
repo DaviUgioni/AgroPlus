@@ -15,6 +15,13 @@ import { db } from '../FirebaseConfig';
 
 export type CategoriaDespesa = 'insumo' | 'mao_de_obra' | 'maquinario' | 'outros';
 
+export const LABELS_CATEGORIA: Record<CategoriaDespesa, string> = {
+  insumo: 'Insumo',
+  mao_de_obra: 'Mão de obra',
+  maquinario: 'Maquinário',
+  outros: 'Outros',
+};
+
 export interface Despesa {
   id?: string;
   propriedadeId: string;

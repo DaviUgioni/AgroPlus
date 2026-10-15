@@ -20,7 +20,8 @@ export async function criarTalhao(dados: Omit<Talhao, 'id'>) {
 export async function listarTalhoes(propriedadeId: string) {
   const q = query(collection(db, 'talhoes'), where('propriedadeId', '==', propriedadeId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Talhao[];
+  const lista = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Talhao[];
+  return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true }));
 }
 
 export async function atualizarTalhao(id: string, dados: Partial<Omit<Talhao, 'id'>>) {

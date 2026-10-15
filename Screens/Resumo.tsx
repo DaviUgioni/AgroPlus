@@ -1,16 +1,38 @@
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ComponentProps, useState, useCallback } from 'react';
+import { ScrollView, RefreshControl, Alert } from 'react-native';
 import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { Text, XStack, YStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades } from '../Services/propriedades';
 import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, Despesa } from '../Services/despesas';
 import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plantio } from '../Services/plantios';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { cores } from '../tamagui.config';
+import { Cabecalho, Carregando, Cartao, EstadoVazio, Tela } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
+
+type IconeFeather = ComponentProps<typeof Feather>['name'];
+
+// Cartão pequeno com um número (usado na grade do topo)
+function CartaoNumero({ icone, valor, label, onPress }: { icone: IconeFeather; valor: string; label: string; onPress: () => void }) {
+  return (
+    <Cartao interativo flexBasis="46%" flexGrow={1} gap={4} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${label}: ${valor}`}>
+      <XStack justifyContent="space-between" alignItems="flex-start">
+        <YStack width={36} height={36} borderRadius="lg" backgroundColor="verdeSuave" alignItems="center" justifyContent="center">
+          <Feather name={icone} size={18} color={cores.verde} />
+        </YStack>
+        <Feather name="chevron-right" size={18} color={cores.textoTerc} />
+      </XStack>
+      <Text fontSize={18} fontWeight="700" color="texto" marginTop={8} numberOfLines={1} adjustsFontSizeToFit>
+        {valor}
+      </Text>
+      <Text fontSize={13} color="textoSec">
+        {label}
+      </Text>
+    </Cartao>
+  );
+}
 
 type ResumoNavigationProp = NavigationProp<RootStackParamList, 'Resumo'>;
 
@@ -101,143 +123,73 @@ export default function Resumo() {
   const formatarMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <BotaoVoltar />
-        <Text style={styles.titulo}>Resumo</Text>
-      </View>
+    <Tela edges={['top', 'left', 'right']}>
+      <Cabecalho titulo="Resumo" subtitulo="Toque em um cartão para ver os detalhes" />
 
       {carregando ? (
-        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
+        <Carregando />
+      ) : totalPropriedades === 0 ? (
+        <EstadoVazio
+          icone="bar-chart-2"
+          titulo="Ainda não há o que resumir"
+          texto="Cadastre uma propriedade e lance plantios e despesas. Os números aparecem aqui automaticamente."
+          acao={{ titulo: 'Cadastrar propriedade', onPress: () => navigation.navigate('PropriedadeForm') }}
+        />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 24 }}
-          refreshControl={<RefreshControl refreshing={atualizando} onRefresh={handleAtualizar} colors={[COLORS.verde]} tintColor={COLORS.verde} />}
+          refreshControl={<RefreshControl refreshing={atualizando} onRefresh={handleAtualizar} colors={[cores.verde]} tintColor={cores.verde} />}
         >
-          <View style={styles.grid}>
-            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
-              <Feather name="map-pin" size={20} color={COLORS.verde} />
-              <Text style={styles.cardValor}>{totalPropriedades}</Text>
-              <Text style={styles.cardLabel}>Propriedades</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
-              <Feather name="maximize" size={20} color={COLORS.verde} />
-              <Text style={styles.cardValor}>{areaTotal} ha</Text>
-              <Text style={styles.cardLabel}>Área total</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => navigation.navigate('ResumoDespesas', { periodo: 'mes' })}
-            >
-              <Feather name="calendar" size={20} color={COLORS.verde} />
-              <Text style={styles.cardValor}>{formatarMoeda(gastoMes)}</Text>
-              <Text style={styles.cardLabel}>Gasto no mês</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => navigation.navigate('ResumoDespesas', { periodo: 'ano' })}
-            >
-              <Feather name="trending-up" size={20} color={COLORS.verde} />
-              <Text style={styles.cardValor}>{formatarMoeda(gastoAno)}</Text>
-              <Text style={styles.cardLabel}>Gasto no ano</Text>
-            </TouchableOpacity>
-          </View>
+          <XStack flexWrap="wrap" gap={12}>
+            <CartaoNumero icone="map-pin" valor={String(totalPropriedades)} label="Propriedades" onPress={() => navigation.navigate('Propriedades')} />
+            <CartaoNumero icone="maximize" valor={`${areaTotal} ha`} label="Área total" onPress={() => navigation.navigate('Propriedades')} />
+            <CartaoNumero icone="calendar" valor={formatarMoeda(gastoMes)} label="Gasto no mês" onPress={() => navigation.navigate('ResumoDespesas', { periodo: 'mes' })} />
+            <CartaoNumero icone="trending-up" valor={formatarMoeda(gastoAno)} label="Gasto no ano" onPress={() => navigation.navigate('ResumoDespesas', { periodo: 'ano' })} />
+          </XStack>
 
-          <TouchableOpacity style={styles.destaqueCard} onPress={() => navigation.navigate('Plantios')}>
-            <Feather name="feather" size={20} color="#fff" />
-            <Text style={styles.destaqueValor}>{plantiosAtivos}</Text>
-            <Text style={styles.destaqueLabel}>{plantiosAtivos === 1 ? 'Plantio ativo' : 'Plantios ativos'}</Text>
-          </TouchableOpacity>
+          <Cartao
+            tom="verde"
+            interativo
+            marginTop={12}
+            flexDirection="row"
+            alignItems="center"
+            gap={14}
+            onPress={() => navigation.navigate('Plantios')}
+            accessibilityRole="button"
+          >
+            <YStack width={44} height={44} borderRadius="full" backgroundColor="rgba(255,255,255,0.18)" alignItems="center" justifyContent="center">
+              <Feather name="feather" size={22} color={cores.sobreVerde} />
+            </YStack>
+            <YStack flex={1}>
+              <Text fontSize={24} fontWeight="700" color="sobreVerde">
+                {plantiosAtivos}
+              </Text>
+              <Text fontSize={13} color="sobreVerdeSuave">
+                {plantiosAtivos === 1 ? 'Plantio ativo' : 'Plantios ativos'}
+              </Text>
+            </YStack>
+            <Feather name="chevron-right" size={20} color={cores.sobreVerdeSuave} />
+          </Cartao>
 
           {proximaColheita && (
-            <TouchableOpacity style={styles.proximaCard} onPress={() => navigation.navigate('ResumoColheitas')}>
-              <Text style={styles.proximaTitulo}>Próxima colheita</Text>
-              <Text style={styles.proximaNome}>
+            <Cartao interativo marginTop={12} onPress={() => navigation.navigate('ResumoColheitas')} accessibilityRole="button">
+              <XStack alignItems="center" justifyContent="space-between">
+                <Text fontSize={13} fontWeight="600" color="textoSec" textTransform="uppercase" letterSpacing={0.6}>
+                  Próxima colheita
+                </Text>
+                <Feather name="chevron-right" size={18} color={cores.textoTerc} />
+              </XStack>
+              <Text fontSize={16} fontWeight="600" color="texto" marginTop={6}>
                 {proximaColheita.tipoNome} · {proximaColheita.propriedadeNome}
               </Text>
-              <Text style={styles.proximaTexto}>{proximaColheita.texto}</Text>
-            </TouchableOpacity>
+              <Text fontSize={14} fontWeight="700" color={proximaColheita.diasRestantes <= 0 ? 'alerta' : 'verde'} marginTop={4}>
+                {proximaColheita.texto}
+              </Text>
+            </Cartao>
           )}
         </ScrollView>
       )}
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  card: {
-    flexBasis: '47%',
-    flexGrow: 1,
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    gap: 4,
-  },
-  cardValor: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 6,
-  },
-  cardLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  destaqueCard: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.md,
-    padding: 16,
-    marginTop: 10,
-    gap: 4,
-  },
-  destaqueValor: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#fff',
-    marginTop: 4,
-  },
-  destaqueLabel: {
-    fontSize: 13,
-    color: '#EAF3DE',
-  },
-  proximaCard: {
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 16,
-    marginTop: 10,
-  },
-  proximaTitulo: {
-    fontSize: 12,
-    color: '#666',
-  },
-  proximaNome: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  proximaTexto: {
-    fontSize: 13,
-    color: COLORS.verde,
-    fontWeight: '500',
-    marginTop: 4,
-  },
-});

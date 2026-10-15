@@ -1,7 +1,13 @@
 // App.tsx
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Appearance } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
+import { TamaguiProvider, Spinner, YStack } from 'tamagui';
+import { NavigationContainer, DefaultTheme, DarkTheme, NavigationState } from '@react-navigation/native';
+import config, { aplicarModo, cores } from './tamagui.config';
+import { ModoContext } from './Components/ModoContext';
+import { lerPreferencias, salvarPreferencia } from './Services/preferencias';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './FirebaseConfig';
@@ -22,6 +28,8 @@ import PlantioForm from './Screens/PlantioForm';
 import Resumo from './Screens/Resumo';
 import ResumoDespesas from './Screens/ResumoDespesas';
 import ResumoColheitas from './Screens/ResumoColheitas';
+import Configuracoes from './Screens/Configuracoes';
+import Ajuda from './Screens/Ajuda';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -41,11 +49,57 @@ export type RootStackParamList = {
   Resumo: undefined;
   ResumoDespesas: { periodo?: 'mes' | 'ano' } | undefined;
   ResumoColheitas: undefined;
+  Configuracoes: undefined;
+  Ajuda: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const temaNavegacao = (escuro: boolean) => {
+  const base = escuro ? DarkTheme : DefaultTheme;
+  return { ...base, colors: { ...base.colors, background: cores.begeClaro, card: cores.branco, primary: cores.verde } };
+};
+
+// Além das cores do app, avisa o sistema: alertas, teclado, seletor de fotos e mapa
+// seguem o modo escolhido, e o fundo da janela não pisca branco nas transições.
+function mudarModo(escuro: boolean) {
+  aplicarModo(escuro);
+  Appearance.setColorScheme(escuro ? 'dark' : 'light');
+  SystemUI.setBackgroundColorAsync(cores.begeClaro).catch(() => {});
+}
+
 export default function App() {
+  const [escuro, setEscuro] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    lerPreferencias().then((p) => {
+      mudarModo(p.modoEscuro);
+      setEscuro(p.modoEscuro);
+    });
+  }, []);
+
+  const alternar = useCallback((valor: boolean) => {
+    mudarModo(valor);
+    setEscuro(valor);
+    salvarPreferencia('modoEscuro', valor);
+  }, []);
+
+  if (escuro === null) return null;
+
+  return (
+    <ModoContext.Provider value={{ escuro, alternar }}>
+      <TamaguiProvider config={config} defaultTheme={escuro ? 'dark' : 'light'}>
+        <StatusBar style={escuro ? 'light' : 'dark'} />
+        <Rotas escuro={escuro} />
+      </TamaguiProvider>
+    </ModoContext.Provider>
+  );
+}
+
+function Rotas({ escuro }: { escuro: boolean }) {
+  // As cores em JS (ícones etc.) são lidas na renderização; ao trocar o modo o container é
+  // remontado com a pilha de telas salva, para o usuário continuar onde estava.
+  const estadoNavegacao = useRef<NavigationState | undefined>(undefined);
   const [user, setUser] = useState<User | null>(null);
   const [carregandoAuth, setCarregandoAuth] = useState(true);
 
@@ -59,14 +113,21 @@ export default function App() {
 
   if (carregandoAuth) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <ActivityIndicator size="large" color="#3B6D11" />
-      </View>
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="background">
+        <Spinner size="large" color="verde" />
+      </YStack>
     );
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      key={escuro ? 'escuro' : 'claro'}
+      theme={temaNavegacao(escuro)}
+      initialState={estadoNavegacao.current}
+      onStateChange={(estado) => {
+        estadoNavegacao.current = estado;
+      }}
+    >
       <Stack.Navigator initialRouteName={user ? 'Home' : 'Login'} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Home" component={Home} />
@@ -85,6 +146,8 @@ export default function App() {
         <Stack.Screen name="Resumo" component={Resumo} />
         <Stack.Screen name="ResumoDespesas" component={ResumoDespesas} />
         <Stack.Screen name="ResumoColheitas" component={ResumoColheitas} />
+        <Stack.Screen name="Configuracoes" component={Configuracoes} />
+        <Stack.Screen name="Ajuda" component={Ajuda} />
       </Stack.Navigator>
     </NavigationContainer>
   );

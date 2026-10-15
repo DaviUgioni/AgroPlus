@@ -1,28 +1,29 @@
 // Components/BotaoVoltar.tsx
-import { TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
+import { YStack, YStackProps } from 'tamagui';
+import { cores } from '../tamagui.config';
 
-export default function BotaoVoltar({ style }: { style?: StyleProp<ViewStyle> }) {
+export default function BotaoVoltar(props: YStackProps) {
   const navigation = useNavigation();
 
   return (
-    <TouchableOpacity
+    <YStack
+      width={44}
+      height={44}
+      borderRadius="full"
+      alignItems="center"
+      justifyContent="center"
+      backgroundColor="branco press:verdeSuave"
+      borderWidth={1}
+      borderColor="borda press:verde"
       onPress={() => navigation.goBack()}
-      style={[styles.botao, style]}
       hitSlop={10}
       accessibilityLabel="Voltar"
       accessibilityRole="button"
+      {...props}
     >
-      <Feather name="arrow-left" size={22} color={COLORS.verde} />
-    </TouchableOpacity>
+      <Feather name="arrow-left" size={20} color={cores.verde} />
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  botao: {
-    padding: 6,
-    marginRight: 8,
-  },
-});

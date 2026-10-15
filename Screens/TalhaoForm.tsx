@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { criarTalhao, atualizarTalhao, listarTalhoes } from '../Services/talhoes';
 import { buscarPropriedade } from '../Services/propriedades';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { Botao, Cabecalho, Campo, Dica, Tela, TelaCarregando } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type TalhaoFormRouteProp = RouteProp<RootStackParamList, 'TalhaoForm'>;
@@ -25,11 +23,18 @@ export default function TalhaoForm() {
   const [areaTalhaoEdicao, setAreaTalhaoEdicao] = useState(0);
   const [carregando, setCarregando] = useState(modoEdicao);
   const [salvando, setSalvando] = useState(false);
+  // Área da propriedade e soma dos talhões, para mostrar quanto ainda está livre
+  const [areaInfo, setAreaInfo] = useState<{ total: number; usada: number } | null>(null);
 
   useEffect(() => {
     if (modoEdicao) {
       carregarDados();
     }
+    Promise.all([buscarPropriedade(propriedadeId), listarTalhoes(propriedadeId)])
+      .then(([prop, lista]) => {
+        if (prop) setAreaInfo({ total: prop.areaTotal, usada: lista.reduce((s, t) => s + t.area, 0) });
+      })
+      .catch(() => {});
   }, [talhaoId]);
 
   async function carregarDados() {
@@ -51,8 +56,12 @@ export default function TalhaoForm() {
   }
 
   async function handleSalvar() {
-    if (!nome.trim() || !area.trim()) {
-      Alert.alert('Atenção', 'Preencha todos os campos.');
+    if (!nome.trim()) {
+      Alert.alert('Falta o nome', 'Dê um nome ao talhão, por exemplo "Área do milho".');
+      return;
+    }
+    if (!area.trim()) {
+      Alert.alert('Falta a área', 'Informe o tamanho do talhão em hectares.');
       return;
     }
 
@@ -102,95 +111,59 @@ export default function TalhaoForm() {
   }
 
   if (carregando) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.verde} />
-      </SafeAreaView>
-    );
+    return <TelaCarregando />;
   }
 
+  const formatarHa = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const disponivel = areaInfo ? areaInfo.total - areaInfo.usada + areaTalhaoEdicao : null;
+  const areaDigitada = Number(area.replace(',', '.'));
+  const erroArea =
+    area.trim() && (isNaN(areaDigitada) || areaDigitada <= 0)
+      ? 'Digite um número maior que zero, ex.: 2,5'
+      : disponivel !== null && areaDigitada > disponivel + 1e-9
+        ? `Maior que a área disponível (${formatarHa(disponivel)} ha)`
+        : undefined;
+
   return (
-    <SafeAreaView style={styles.container}>
+    <Tela>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-          <View style={styles.headerRow}>
-            <BotaoVoltar />
-            <Text style={styles.titulo}>{modoEdicao ? 'Editar talhão' : 'Novo talhão'}</Text>
-          </View>
+          <Cabecalho titulo={modoEdicao ? 'Editar talhão' : 'Novo talhão'} />
 
-          <Text style={styles.label}>Nome do talhão</Text>
-          <TextInput
-            style={styles.input}
+          <Dica icone="grid">
+            Talhão é uma parte da propriedade, como uma lavoura ou um pasto. Assim você separa plantios e gastos por área.
+          </Dica>
+
+          <Campo
+            rotulo="Nome do talhão"
             value={nome}
             onChangeText={setNome}
-            placeholder="Talhão A"
+            placeholder="Ex.: Área do milho"
+            ajuda="Use um nome fácil de reconhecer no dia a dia."
           />
 
-          <Text style={styles.label}>Área (ha)</Text>
-          <TextInput
-            style={styles.input}
+          <Campo
+            rotulo="Área em hectares (ha)"
             value={area}
             onChangeText={setArea}
-            placeholder="5.0"
+            placeholder="Ex.: 2,5"
             keyboardType="numeric"
+            erro={erroArea}
+            ajuda={
+              disponivel !== null && areaInfo
+                ? `Disponível: ${formatarHa(disponivel)} ha de ${formatarHa(areaInfo.total)} ha da propriedade.`
+                : undefined
+            }
           />
 
-          <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
-            {salvando ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.botaoTexto}>Salvar</Text>
-            )}
-          </TouchableOpacity>
+          <Botao
+            titulo={modoEdicao ? 'Salvar alterações' : 'Cadastrar talhão'}
+            carregando={salvando}
+            marginTop={28}
+            onPress={handleSalvar}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  label: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-    marginTop: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.sm,
-    padding: 10,
-    fontSize: 15,
-  },
-  botao: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.sm,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  botaoTexto: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: 15,
-  },
-});

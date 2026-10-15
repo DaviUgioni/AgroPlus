@@ -1,11 +1,9 @@
-import { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { FlatList, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+import { Text, XStack, YStack } from 'tamagui';
 import {
   listarDespesasPorPropriedade,
   listarDespesasPorTalhao,
@@ -15,24 +13,19 @@ import {
   totalDespesasAno,
   Despesa,
   CategoriaDespesa,
+  LABELS_CATEGORIA,
 } from '../Services/despesas';
 import { buscarPropriedade } from '../Services/propriedades';
 import { doc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { cores } from '../tamagui.config';
+import { BarraProgresso, Botao, BotaoFlutuante, Cabecalho, Campo, Carregando, Cartao, EstadoVazio, Seletor, Tela } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
+import { baixarPlanilha, CanceladoError, compartilharPlanilha } from '../Services/planilha';
 
 type DespesasListaRouteProp = RouteProp<RootStackParamList, 'DespesasLista'>;
 type NavProp = NavigationProp<RootStackParamList>;
-
-const LABELS_CATEGORIA: Record<CategoriaDespesa, string> = {
-  insumo: 'Insumo',
-  mao_de_obra: 'Mão de obra',
-  maquinario: 'Maquinário',
-  outros: 'Outros',
-};
 
 const MESES = ['Todos', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -51,6 +44,13 @@ export default function DespesasLista() {
   const [limite, setLimite] = useState<string>('');
   const [limiteSalvo, setLimiteSalvo] = useState<number | undefined>(undefined);
   const [salvandoLimite, setSalvandoLimite] = useState(false);
+  const [editandoLimite, setEditandoLimite] = useState(false);
+  const [exportando, setExportando] = useState(false);
+
+  // Fecha o editor do limite assim que um valor é salvo ou removido
+  useEffect(() => {
+    setEditandoLimite(false);
+  }, [limiteSalvo]);
 
   async function carregarDespesas(opts?: { silent?: boolean }) {
     if (!propriedadeId) {
@@ -162,435 +162,300 @@ export default function DespesasLista() {
     }
   }
 
-  async function handleExportar() {
-    if (despesasFiltradas.length === 0) {
-      Alert.alert('Aviso', 'Nada para exportar.');
-      return;
-    }
+  async function gerarPlanilha(acao: 'baixar' | 'compartilhar') {
     try {
-      const header = 'Data,Categoria,Descricao,Valor\n';
-      const linhas = despesasFiltradas
-        .map((d) => {
-          const data = d.data.toDate().toLocaleDateString('pt-BR');
-          const cat = LABELS_CATEGORIA[d.categoria];
-          const desc = `"${d.descricao.replace(/"/g, '""')}"`;
-          const val = d.valor.toFixed(2).replace('.', ',');
-          return `${data},${cat},${desc},${val}`;
-        })
-        .join('\n');
-      const csv = header + linhas;
-      const file = new File(Paths.cache, `despesas-${propriedadeId}.csv`);
-      if (!file.exists) {
-        try {
-          (file as any).create({ idempotent: true });
-        } catch {}
-      }
-      // SDK57 File.write é síncrono
-      (file as any).write(csv);
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(file.uri, { mimeType: 'text/csv', dialogTitle: 'Compartilhar despesas' });
+      setExportando(true);
+      if (acao === 'compartilhar') {
+        await compartilharPlanilha(propriedadeId);
       } else {
-        Alert.alert('Exportado', `Arquivo salvo em: ${file.uri}`);
+        const salvo = await baixarPlanilha(propriedadeId);
+        if (salvo) Alert.alert('Planilha baixada', `"${salvo.arquivo}" foi salva na pasta ${salvo.pasta}.`);
       }
     } catch (e: any) {
+      if (e instanceof CanceladoError) return;
       console.log('Erro export', e);
-      Alert.alert('Erro', mensagemErro(e, 'Não foi possível exportar.'));
+      Alert.alert('Erro', mensagemErro(e, 'Não foi possível gerar a planilha.'));
+    } finally {
+      setExportando(false);
     }
   }
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.header}>
-        <BotaoVoltar style={styles.botaoVoltar} />
-        <View style={{ flex: 1, flexShrink: 1, marginRight: 12 }}>
-          <Text style={styles.titulo} numberOfLines={1}>
-            {modoTalhao ? `Despesas — ${talhaoNome ?? 'Talhão'}` : 'Despesas'}
-          </Text>
-          {modoTalhao && <Text style={styles.subtitulo} numberOfLines={1}>{talhaoNome}</Text>}
-        </View>
-        <TouchableOpacity onPress={handleExportar} style={styles.exportBtn}>
-          <Feather name="share-2" size={16} color={COLORS.verde} />
-          <Text style={styles.exportTexto}>Exportar</Text>
-        </TouchableOpacity>
-      </View>
+  function handleExportar() {
+    Alert.alert('Planilha desta propriedade', 'Relatório em Excel com resumo, despesas, gastos por mês, plantios e talhões.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Compartilhar', onPress: () => gerarPlanilha('compartilhar') },
+      { text: 'Baixar', onPress: () => gerarPlanilha('baixar') },
+    ]);
+  }
 
-      <View style={styles.totalCard}>
-        <Text style={styles.totalLabel}>Total filtrado</Text>
-        <Text style={styles.totalValor}>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Text>
-        <View style={styles.totalRow}>
-          <View style={styles.totalMini}>
-            <Text style={styles.totalMiniLabel}>Mês {filtroMes !== -1 ? MESES[filtroMes + 1] : MESES[mesAtual + 1]}</Text>
-            <Text style={styles.totalMiniValor}>{totalMes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Text>
-          </View>
-          <View style={styles.totalMini}>
-            <Text style={styles.totalMiniLabel}>Ano {anoAtual}</Text>
-            <Text style={styles.totalMiniValor}>{totalAno.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Text>
-          </View>
-        </View>
-      </View>
+  const formatarMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const temFiltro = filtroCat !== 'todas' || filtroMes !== -1;
+  const nomeMes = filtroMes !== -1 ? MESES[filtroMes + 1] : MESES[mesAtual + 1];
+  const usoLimite = limiteSalvo ? totalMes / limiteSalvo : 0;
 
-      <View style={styles.filtros}>
-        <View style={styles.filtroBox}>
-          <Text style={styles.filtroLabel}>Categoria</Text>
-          <View style={styles.pickerBox}>
-            <Picker selectedValue={filtroCat} onValueChange={(v) => setFiltroCat(v as any)} style={styles.picker}>
-              <Picker.Item label="Todas" value="todas" />
-              <Picker.Item label="Insumo" value="insumo" />
-              <Picker.Item label="Mão de obra" value="mao_de_obra" />
-              <Picker.Item label="Maquinário" value="maquinario" />
-              <Picker.Item label="Outros" value="outros" />
-            </Picker>
-          </View>
-        </View>
-        <View style={styles.filtroBox}>
-          <Text style={styles.filtroLabel}>Mês</Text>
-          <View style={styles.pickerBox}>
-            <Picker selectedValue={filtroMes} onValueChange={(v) => setFiltroMes(Number(v))} style={styles.picker}>
-              {MESES.map((m, i) => (
-                <Picker.Item key={m} label={m} value={i - 1} />
-              ))}
-            </Picker>
-          </View>
-        </View>
-      </View>
+  const topo = (
+    <>
+      <Cartao tom="verde" marginBottom={12}>
+        <Text fontSize={14} color="sobreVerdeSuave">
+          {temFiltro ? 'Total com os filtros escolhidos' : 'Total gasto até hoje'}
+        </Text>
+        <Text fontSize={28} fontWeight="700" color="sobreVerde" marginTop={2}>
+          {formatarMoeda(total)}
+        </Text>
+        <XStack gap={10} marginTop={12}>
+          <YStack flex={1} backgroundColor="rgba(255,255,255,0.15)" borderRadius="lg" padding={10}>
+            <Text fontSize={13} color="sobreVerdeSuave">
+              Mês de {nomeMes}
+            </Text>
+            <Text fontSize={16} fontWeight="700" color="sobreVerde" marginTop={2}>
+              {formatarMoeda(totalMes)}
+            </Text>
+          </YStack>
+          <YStack flex={1} backgroundColor="rgba(255,255,255,0.15)" borderRadius="lg" padding={10}>
+            <Text fontSize={13} color="sobreVerdeSuave">
+              Ano de {anoAtual}
+            </Text>
+            <Text fontSize={16} fontWeight="700" color="sobreVerde" marginTop={2}>
+              {formatarMoeda(totalAno)}
+            </Text>
+          </YStack>
+        </XStack>
+      </Cartao>
 
       {!modoTalhao && (
-        <View style={styles.limiteBox}>
-          <Text style={styles.limiteLabel}>Limite mensal (R$) — só por propriedade</Text>
-          <View style={styles.limiteRow}>
-            <TextInput
-              style={[styles.limiteInput, estourou ? styles.limiteInputAlerta : null]}
-              value={limite}
-              onChangeText={setLimite}
-              placeholder="Ex: 2000"
-              keyboardType="numeric"
-            />
-            <TouchableOpacity style={styles.limiteBtn} onPress={handleSalvarLimite} disabled={salvandoLimite}>
-              {salvandoLimite ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.limiteBtnTexto}>Salvar</Text>
+        <Cartao marginBottom={12} padding={14} gap={10}>
+          {limiteSalvo !== undefined && !editandoLimite ? (
+            <>
+              <XStack justifyContent="space-between" alignItems="center">
+                <YStack flex={1}>
+                  <Text fontSize={14} fontWeight="600" color="texto">
+                    Limite de gastos do mês
+                  </Text>
+                  <Text fontSize={13} color={estourou ? 'erro' : 'textoSec'} marginTop={2}>
+                    {formatarMoeda(totalMes)} de {formatarMoeda(limiteSalvo)} ({Math.round(usoLimite * 100)}%)
+                  </Text>
+                </YStack>
+                <Botao variante="texto" tamanho="sm" titulo="Alterar" onPress={() => setEditandoLimite(true)} />
+              </XStack>
+              <BarraProgresso valor={usoLimite} cor={estourou ? 'erro' : usoLimite >= 0.8 ? 'alerta' : 'verde'} />
+              {estourou && (
+                <Text fontSize={13} fontWeight="600" color="erro">
+                  Você passou do limite deste mês.
+                </Text>
               )}
-            </TouchableOpacity>
-          </View>
-          {estourou && <Text style={styles.alerta}>⚠️ Você passou do limite mensal!</Text>}
-        </View>
+            </>
+          ) : editandoLimite ? (
+            <>
+              <Text fontSize={14} fontWeight="600" color="texto">
+                Limite de gastos do mês
+              </Text>
+              <Text fontSize={13} color="textoSec">
+                O app avisa quando os gastos do mês passarem desse valor. Deixe vazio e salve para remover.
+              </Text>
+              <XStack gap={8} alignItems="flex-start">
+                <YStack flex={1}>
+                  <Campo
+                    value={limite}
+                    onChangeText={setLimite}
+                    placeholder="Ex.: 2000"
+                    keyboardType="numeric"
+                    icone="dollar-sign"
+                  />
+                </YStack>
+                <Botao titulo="Salvar" carregando={salvandoLimite} minHeight={50} onPress={handleSalvarLimite} />
+              </XStack>
+              <Botao
+                variante="texto"
+                tamanho="sm"
+                titulo="Cancelar"
+                alignSelf="flex-start"
+                paddingHorizontal={0}
+                onPress={() => setEditandoLimite(false)}
+              />
+            </>
+          ) : (
+            <XStack
+              alignItems="center"
+              gap={10}
+              onPress={() => setEditandoLimite(true)}
+              opacity="press:0.7"
+              accessibilityRole="button"
+            >
+              <Feather name="target" size={20} color={cores.verde} />
+              <YStack flex={1}>
+                <Text fontSize={14} fontWeight="600" color="verde">
+                  Definir um limite de gastos por mês
+                </Text>
+                <Text fontSize={13} color="textoSec" marginTop={2}>
+                  Opcional: o app avisa quando você passar dele.
+                </Text>
+              </YStack>
+              <Feather name="chevron-right" size={18} color={cores.textoTerc} />
+            </XStack>
+          )}
+        </Cartao>
       )}
 
-      {carregando ? (
-        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
-      ) : despesasFiltradas.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.vazio}>Nenhuma despesa com esse filtro.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={despesasFiltradas}
-          keyExtractor={(item) => item.id!}
-          contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
-          keyboardShouldPersistTaps="handled"
-          refreshing={atualizando}
-          onRefresh={handleAtualizar}
-          renderItem={({ item }) => {
-            const isFutura = (item.data?.toMillis?.() ?? 0) > agora.getTime();
-            return (
-              <View style={[styles.item, isFutura ? styles.itemFuturo : null]}>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemCategoria}>
-                    {LABELS_CATEGORIA[item.categoria]} • {item.data?.toDate?.()?.toLocaleDateString('pt-BR') ?? '--'}
-                    {item.recorrente ? ' • Recorrente' : ''} {isFutura ? ' • Agendada' : ''}
-                  </Text>
-                  <Text style={styles.itemDescricao}>{item.descricao}</Text>
-                  {item.notaFiscalUri ? <Text style={styles.itemNota}>📎 Nota anexada</Text> : null}
-                  {isFutura && <Text style={styles.itemFuturoTexto}>Será contabilizada quando o mês chegar</Text>}
-                  <Text style={[styles.itemValor, isFutura ? styles.itemValorFuturo : null]}>
-                    {item.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </Text>
-                </View>
-              <View style={styles.acoes}>
-                <TouchableOpacity
-                  style={styles.acaoBotao}
-                  onPress={() => navigation.navigate('DespesaForm', { propriedadeId, despesaId: item.id })}
-                  accessibilityLabel="Editar despesa"
+      <XStack gap={10} marginBottom={12}>
+        <YStack flex={1}>
+          <Seletor
+            compacto
+            rotulo="Filtrar por categoria"
+            valor={filtroCat}
+            aoMudar={setFiltroCat}
+            opcoes={[
+              { label: 'Todas', valor: 'todas' as const },
+              ...(Object.keys(LABELS_CATEGORIA) as CategoriaDespesa[]).map((c) => ({ label: LABELS_CATEGORIA[c], valor: c })),
+            ]}
+          />
+        </YStack>
+        <YStack flex={1}>
+          <Seletor
+            compacto
+            rotulo="Filtrar por mês"
+            valor={filtroMes}
+            aoMudar={setFiltroMes}
+            opcoes={MESES.map((m, i) => ({ label: m, valor: i - 1 }))}
+          />
+        </YStack>
+      </XStack>
+    </>
+  );
+
+  return (
+    <Tela edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <Cabecalho
+          titulo="Despesas"
+          subtitulo={modoTalhao ? `Talhão: ${talhaoNome ?? ''}` : undefined}
+          direita={<Botao variante="contorno" tamanho="sm" icone="download" titulo="Planilha" carregando={exportando} onPress={handleExportar} />}
+        />
+
+        {carregando ? (
+          <Carregando />
+        ) : (
+          <FlatList
+            data={despesasFiltradas}
+            keyExtractor={(item) => item.id!}
+            contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            refreshing={atualizando}
+            onRefresh={handleAtualizar}
+            ListHeaderComponent={topo}
+            ListEmptyComponent={
+              despesas.length === 0 ? (
+                <EstadoVazio
+                  icone="dollar-sign"
+                  titulo="Nenhuma despesa ainda"
+                  texto="Lance aqui compras de insumos, diárias, combustível e outros gastos."
+                  acao={{
+                    titulo: 'Lançar despesa',
+                    onPress: () => navigation.navigate('DespesaForm', { propriedadeId, talhaoId }),
+                  }}
+                  marginTop={16}
+                />
+              ) : (
+                <EstadoVazio
+                  icone="filter"
+                  titulo="Nada com esses filtros"
+                  texto="Tente outra categoria ou outro mês."
+                  acao={{
+                    titulo: 'Limpar filtros',
+                    icone: 'x',
+                    onPress: () => {
+                      setFiltroCat('todas');
+                      setFiltroMes(-1);
+                    },
+                  }}
+                  marginTop={16}
+                />
+              )
+            }
+            renderItem={({ item }) => {
+              const isFutura = (item.data?.toMillis?.() ?? 0) > agora.getTime();
+              const detalhes = [
+                LABELS_CATEGORIA[item.categoria],
+                item.data?.toDate?.()?.toLocaleDateString('pt-BR') ?? '--',
+                item.recorrente ? 'Mensal' : null,
+              ].filter(Boolean);
+              return (
+                <Cartao
+                  marginBottom={10}
+                  padding={14}
+                  backgroundColor={isFutura ? 'begeClaro' : 'branco'}
+                  borderStyle={isFutura ? 'dashed' : 'solid'}
+                  borderColor={isFutura ? 'bordaForte' : 'borda'}
                 >
-                  <Feather name="edit-2" size={18} color="#666" />
-                  <Text style={styles.acaoTexto}>Editar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.acaoBotao, styles.acaoExcluir]}
-                  onPress={() => handleExcluir(item.id!)}
-                  accessibilityLabel="Excluir despesa"
-                >
-                  <Feather name="trash-2" size={18} color="#c0392b" />
-                  <Text style={[styles.acaoTexto, { color: '#c0392b' }]}>Excluir</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            );
-          }}
+                  {isFutura && (
+                    <XStack
+                      alignSelf="flex-start"
+                      backgroundColor="alertaSuave"
+                      borderRadius="full"
+                      paddingHorizontal={10}
+                      paddingVertical={3}
+                      marginBottom={8}
+                      gap={6}
+                      alignItems="center"
+                    >
+                      <Feather name="clock" size={12} color={cores.alerta} />
+                      <Text fontSize={12} fontWeight="700" color="alerta">
+                        Agendada · entra no total quando o mês chegar
+                      </Text>
+                    </XStack>
+                  )}
+                  <XStack justifyContent="space-between" alignItems="flex-start" gap={12}>
+                    <YStack flex={1}>
+                      <Text fontSize={16} fontWeight="600" color="texto">
+                        {item.descricao}
+                      </Text>
+                      <Text fontSize={13} color="textoSec" marginTop={2}>
+                        {detalhes.join(' • ')}
+                      </Text>
+                      {item.notaFiscalUri ? (
+                        <XStack alignItems="center" gap={4} marginTop={4}>
+                          <Feather name="paperclip" size={13} color={cores.verde} />
+                          <Text fontSize={13} color="verde">
+                            Nota fiscal anexada
+                          </Text>
+                        </XStack>
+                      ) : null}
+                    </YStack>
+                    <Text fontSize={17} fontWeight="700" color={isFutura ? 'textoTerc' : 'verde'}>
+                      {formatarMoeda(item.valor)}
+                    </Text>
+                  </XStack>
+                  <XStack
+                    justifyContent="flex-end"
+                    gap={8}
+                    marginTop={12}
+                    paddingTop={10}
+                    borderTopWidth={1}
+                    borderTopColor="borda"
+                  >
+                    <Botao
+                      variante="contorno"
+                      tamanho="sm"
+                      icone="edit-2"
+                      titulo="Editar"
+                      onPress={() => navigation.navigate('DespesaForm', { propriedadeId, despesaId: item.id })}
+                    />
+                    <Botao variante="perigo" tamanho="sm" icone="trash-2" titulo="Excluir" onPress={() => handleExcluir(item.id!)} />
+                  </XStack>
+                </Cartao>
+              );
+            }}
+          />
+        )}
+      </KeyboardAvoidingView>
+
+      {despesas.length > 0 && (
+        <BotaoFlutuante
+          icone="plus"
+          titulo="Nova despesa"
+          onPress={() => navigation.navigate('DespesaForm', { propriedadeId, talhaoId })}
         />
       )}
-
-      <TouchableOpacity
-        style={[styles.fab, { bottom: Math.max(insets.bottom, 12) + 8 }]}
-        onPress={() => navigation.navigate('DespesaForm', { propriedadeId, talhaoId })}
-      >
-        <Feather name="plus" size={18} color="#fff" />
-        <Text style={styles.fabTexto}>Nova despesa</Text>
-      </TouchableOpacity>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  subtitulo: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  botaoVoltar: {
-    marginRight: 4,
-    marginLeft: -6,
-    padding: 6,
-  },
-  exportBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: COLORS.verde,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.sm,
-  },
-  exportTexto: {
-    color: COLORS.verde,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  totalCard: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.md,
-    padding: 16,
-    marginBottom: 12,
-  },
-  totalLabel: {
-    fontSize: 13,
-    color: '#EAF3DE',
-  },
-  totalValor: {
-    fontSize: 22,
-    fontWeight: '500',
-    color: '#fff',
-    marginTop: 2,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  totalMini: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: RADIUS.sm,
-    padding: 8,
-  },
-  totalMiniLabel: {
-    fontSize: 11,
-    color: '#EAF3DE',
-  },
-  totalMiniValor: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-    marginTop: 2,
-  },
-  filtros: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  filtroBox: {
-    flex: 1,
-  },
-  filtroLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginBottom: 2,
-  },
-  pickerBox: {
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.sm,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-    paddingHorizontal: 4,
-  },
-  picker: {
-    marginHorizontal: -4,
-    marginVertical: -2,
-  },
-  limiteBox: {
-    marginBottom: 12,
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 10,
-  },
-  limiteLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginBottom: 4,
-  },
-  limiteRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  limiteInput: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    textAlignVertical: 'center',
-  },
-  limiteInputAlerta: {
-    borderColor: '#E74C3C',
-  },
-  limiteBtn: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  limiteBtnTexto: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  alerta: {
-    color: '#E74C3C',
-    fontSize: 12,
-    marginTop: 6,
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  vazio: {
-    textAlign: 'center',
-    color: '#888',
-    fontSize: 14,
-  },
-  item: {
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    marginBottom: 10,
-  },
-  itemFuturo: {
-    opacity: 0.7,
-    borderWidth: 1,
-    borderColor: '#d1c9a8',
-    borderStyle: 'dashed',
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemCategoria: {
-    fontSize: 11,
-    color: '#666',
-  },
-  itemDescricao: {
-    fontSize: 15,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  itemNota: {
-    fontSize: 11,
-    color: COLORS.verde,
-    marginTop: 2,
-  },
-  itemValor: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.verde,
-    marginTop: 6,
-  },
-  itemValorFuturo: {
-    color: '#888',
-    fontWeight: '500',
-  },
-  itemFuturoTexto: {
-    fontSize: 11,
-    color: '#5c4f26',
-    marginTop: 2,
-    fontStyle: 'italic',
-  },
-  acoes: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#e0ddd4',
-    paddingTop: 10,
-  },
-  acaoBotao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: RADIUS.sm,
-  },
-  acaoExcluir: {
-    borderColor: '#e9b4b4',
-    backgroundColor: '#fff5f5',
-  },
-  acaoTexto: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#666',
-  },
-  fab: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.md,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  fabTexto: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});

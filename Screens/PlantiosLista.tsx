@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FlatList, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { Text, XStack, YStack } from 'tamagui';
 import { listarPlantiosPorPropriedade, excluirPlantio, estimativaColheita, textoEstimativa, Plantio } from '../Services/plantios';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { cores } from '../tamagui.config';
+import { BarraProgresso, BotaoFlutuante, Cabecalho, Carregando, EstadoVazio, ItemLista, Tela } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type PlantiosListaRouteProp = RouteProp<RootStackParamList, 'PlantiosLista'>;
@@ -65,146 +66,65 @@ export default function PlantiosLista() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <BotaoVoltar style={styles.botaoVoltar} />
-        <View style={{ flex: 1, flexShrink: 1 }}>
-          <Text style={styles.titulo} numberOfLines={1}>Plantios</Text>
-          {propriedadeNome && <Text style={styles.subtitulo} numberOfLines={1}>{propriedadeNome}</Text>}
-        </View>
-      </View>
+    <Tela edges={['top', 'left', 'right']}>
+      <Cabecalho titulo="Plantios" subtitulo={propriedadeNome} />
 
       {carregando ? (
-        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
+        <Carregando />
       ) : plantios.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.vazio}>Nenhum plantio cadastrado ainda.</Text>
-        </View>
+        <EstadoVazio
+          icone="feather"
+          titulo="Nenhum plantio ainda"
+          texto="Registre o que você plantou e o app avisa quando estiver perto da colheita."
+          acao={{ titulo: 'Cadastrar plantio', onPress: () => navigation.navigate('PlantioForm', { propriedadeId }) }}
+        />
       ) : (
         <FlatList
           data={plantios}
           keyExtractor={(item) => item.id!}
           contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+          showsVerticalScrollIndicator={false}
           refreshing={atualizando}
           onRefresh={handleAtualizar}
           renderItem={({ item }) => {
             const estimativa = estimativaColheita(item.dataPlantio, item.diasParaColheita);
+            // Quanto do ciclo já passou (0 a 1), para a barra de progresso
+            const progresso = 1 - estimativa.diasRestantes / (item.diasParaColheita || 1);
             return (
-              <View style={styles.item}>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemTipo}>{item.tipoNome}</Text>
-                  <Text style={styles.itemDetalhe}>
-                    {item.talhaoNome ?? 'Propriedade toda'} · Plantado em {item.dataPlantio.toDate().toLocaleDateString('pt-BR')}
-                  </Text>
-                  <Text style={[styles.itemEstimativa, estimativa.pronto ? styles.itemEstimativaPronta : null]}>
+              <ItemLista
+                titulo={item.tipoNome}
+                subtitulo={`${item.talhaoNome ? `Talhão: ${item.talhaoNome}` : 'Propriedade toda'} · Plantado em ${item.dataPlantio.toDate().toLocaleDateString('pt-BR')}`}
+                direita={
+                  <YStack
+                    padding={13}
+                    borderRadius="lg"
+                    backgroundColor="transparent press:erroSuave"
+                    onPress={() => handleExcluir(item.id!)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Excluir plantio de ${item.tipoNome}`}
+                  >
+                    <Feather name="trash-2" size={18} color={cores.erro} />
+                  </YStack>
+                }
+              >
+                <XStack justifyContent="space-between" alignItems="center" marginTop={10} marginBottom={6}>
+                  <Text fontSize={14} fontWeight="700" color={estimativa.pronto ? 'alerta' : 'verde'}>
                     {textoEstimativa(estimativa)}
                   </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.acaoExcluir}
-                  onPress={() => handleExcluir(item.id!)}
-                  accessibilityLabel="Excluir plantio"
-                >
-                  <Feather name="trash-2" size={18} color="#c0392b" />
-                </TouchableOpacity>
-              </View>
+                  <Text fontSize={13} color="textoSec">
+                    {estimativa.dataPrevista.toLocaleDateString('pt-BR')}
+                  </Text>
+                </XStack>
+                <BarraProgresso valor={progresso} cor={estimativa.pronto ? 'alerta' : 'verde'} />
+              </ItemLista>
             );
           }}
         />
       )}
 
-      <TouchableOpacity
-        style={[styles.fab, { bottom: Math.max(insets.bottom, 12) + 8 }]}
-        onPress={() => navigation.navigate('PlantioForm', { propriedadeId })}
-      >
-        <Feather name="plus" size={18} color="#fff" />
-        <Text style={styles.fabTexto}>Novo plantio</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+      {plantios.length > 0 && (
+        <BotaoFlutuante icone="plus" titulo="Novo plantio" onPress={() => navigation.navigate('PlantioForm', { propriedadeId })} />
+      )}
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  botaoVoltar: {
-    marginRight: 4,
-    marginLeft: -6,
-    padding: 6,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  subtitulo: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  vazio: {
-    textAlign: 'center',
-    color: '#888',
-    fontSize: 14,
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    marginBottom: 10,
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemTipo: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  itemDetalhe: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  itemEstimativa: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.verde,
-    marginTop: 6,
-  },
-  itemEstimativaPronta: {
-    color: '#c0392b',
-  },
-  acaoExcluir: {
-    padding: 10,
-  },
-  fab: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.md,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  fabTexto: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});

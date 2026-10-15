@@ -1,11 +1,6 @@
 // Screens/Login.tsx
 import { useState, useEffect } from 'react';
 import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  TextInput,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -16,13 +11,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
+import { Text, YStack } from 'tamagui';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
+import { cores } from '../tamagui.config';
+import { Botao, Campo, Subtitulo, Titulo } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
+import { lerPreferencias } from '../Services/preferencias';
 
 type LoginNavigationProp = NavigationProp<RootStackParamList, 'Login'>;
 
@@ -30,7 +27,6 @@ export default function Login() {
   const navigation = useNavigation<LoginNavigationProp>();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [entrando, setEntrando] = useState(false);
   const [emailErro, setEmailErro] = useState('');
   const [bioDisponivel, setBioDisponivel] = useState(false);
@@ -44,7 +40,8 @@ export default function Login() {
     (async () => {
       const compativel = await LocalAuthentication.hasHardwareAsync();
       const enrolado = await LocalAuthentication.isEnrolledAsync();
-      setBioDisponivel(compativel && enrolado);
+      const { biometria } = await lerPreferencias(); // pode ser desligada nas Configurações
+      setBioDisponivel(compativel && enrolado && biometria);
     })();
   }, []);
 
@@ -122,35 +119,52 @@ export default function Login() {
     }
   }
 
+  function handleMudarEmail(v: string) {
+    setEmail(v);
+    const norm = v.trim().toLowerCase();
+    if (!norm) setEmailErro('');
+    else if (!isEmailValido(norm)) setEmailErro('E-mail inválido.');
+    else setEmailErro('');
+  }
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#fff' }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.container}>
-            <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: cores.branco }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <YStack flex={1} justifyContent="center" padding={24}>
+              <YStack alignItems="center" marginBottom={32}>
+                <YStack
+                  width={104}
+                  height={104}
+                  borderRadius="full"
+                  backgroundColor="verdeSuave"
+                  alignItems="center"
+                  justifyContent="center"
+                  marginBottom={16}
+                >
+                  <Image source={require('../assets/logo.png')} style={{ width: 80, height: 80 }} resizeMode="contain" />
+                </YStack>
+                <Titulo fontSize={24} textAlign="center">
+                  Bem-vindo ao AgroPlus
+                </Titulo>
+                <Subtitulo textAlign="center" marginTop={4}>
+                  Gerencie sua produção com facilidade
+                </Subtitulo>
+              </YStack>
 
-            <Text style={styles.titulo}>Bem-vindo ao AgroPlus</Text>
-            <Text style={styles.subtitulo}>Gerencie sua produção com facilidade</Text>
-
-            <View style={[styles.card, emailErro ? styles.cardErro : null]}>
-              <View style={styles.linha}>
-                <Feather name="mail" size={18} color="#888780" style={styles.icone} />
-                <TextInput
-                  placeholder="Usuário ou e-mail"
+              <YStack gap={4}>
+                <Campo
+                  rotulo="E-mail"
+                  icone="mail"
+                  placeholder="seuemail@exemplo.com"
                   value={email}
-                  onChangeText={(v) => {
-                    setEmail(v);
-                    const norm = v.trim().toLowerCase();
-                    if (!norm) setEmailErro('');
-                    else if (!isEmailValido(norm)) setEmailErro('E-mail inválido.');
-                    else setEmailErro('');
-                  }}
-                  style={styles.input}
+                  onChangeText={handleMudarEmail}
+                  erro={emailErro}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   returnKeyType="next"
@@ -159,177 +173,57 @@ export default function Login() {
                     if (norm && !isEmailValido(norm)) setEmailErro('E-mail inválido.');
                   }}
                 />
-              </View>
-
-              <View style={[styles.linha, styles.linhaSemBorda]}>
-                <Feather name="lock" size={18} color="#888780" style={styles.icone} />
-                <TextInput
-                  placeholder="Senha"
+                <Campo
+                  rotulo="Senha"
+                  icone="lock"
+                  placeholder="Sua senha"
+                  senha
                   value={senha}
                   onChangeText={setSenha}
-                  secureTextEntry={!mostrarSenha}
-                  style={styles.input}
                   returnKeyType="done"
                   onSubmitEditing={handleLogin}
                 />
-                <TouchableOpacity
-                  onPress={() => setMostrarSenha((v) => !v)}
-                  hitSlop={8}
-                  style={styles.olhoBtn}
-                  accessibilityLabel={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                >
-                  <Feather name={mostrarSenha ? 'eye-off' : 'eye'} size={18} color="#888780" />
-                </TouchableOpacity>
-              </View>
-            </View>
-            {emailErro ? <Text style={styles.emailErroTexto}>{emailErro}</Text> : null}
+              </YStack>
 
-            <TouchableOpacity onPress={handleEsqueciSenha} style={styles.esqueciBtn}>
-              <Text style={styles.esqueciSenha}>Esqueci minha senha</Text>
-            </TouchableOpacity>
+              <Botao
+                variante="texto"
+                titulo="Esqueci minha senha"
+                tamanho="sm"
+                alignSelf="flex-end"
+                marginTop={4}
+                marginBottom={20}
+                onPress={handleEsqueciSenha}
+              />
 
-            <TouchableOpacity style={styles.botao} onPress={handleLogin} disabled={entrando}>
-              <Text style={styles.textoBotao}>{entrando ? 'Entrando...' : 'Entrar'}</Text>
-            </TouchableOpacity>
+              <Botao titulo={entrando ? 'Entrando...' : 'Entrar'} carregando={entrando} onPress={handleLogin} />
 
-            {bioDisponivel ? (
-              <TouchableOpacity style={styles.botaoBio} onPress={handleBiometria}>
-                <Feather name="smartphone" size={18} color={COLORS.verde} />
-                <Text style={styles.botaoBioTexto}>Entrar com impressão digital</Text>
-              </TouchableOpacity>
-            ) : null}
+              {bioDisponivel ? (
+                <Botao
+                  variante="secundario"
+                  icone="smartphone"
+                  titulo="Entrar com impressão digital"
+                  marginTop={12}
+                  onPress={handleBiometria}
+                />
+              ) : null}
 
-            <TouchableOpacity onPress={() => navigation.navigate('CriarConta')}>
-              <Text style={styles.criarConta}>
-                Não tem conta? <Text style={styles.criarContaLink}>Criar conta</Text>
+              <Text
+                fontSize={14}
+                color="textoSec"
+                textAlign="center"
+                marginTop={24}
+                padding={8}
+                onPress={() => navigation.navigate('CriarConta')}
+              >
+                Não tem conta?{' '}
+                <Text color="verde" fontWeight="600">
+                  Criar conta
+                </Text>
               </Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableWithoutFeedback>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            </YStack>
+          </TouchableWithoutFeedback>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const VERDE = COLORS.verde;
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  container: {
-    flex: 1,
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  logo: {
-    width: 96,
-    height: 96,
-    marginBottom: 16,
-  },
-  titulo: {
-    fontSize: 22,
-    fontWeight: '500',
-    color: '#000',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subtitulo: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  card: {
-    width: '100%',
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    overflow: 'hidden',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  cardErro: {
-    borderColor: '#E74C3C',
-  },
-  emailErroTexto: {
-    alignSelf: 'flex-start',
-    color: '#E74C3C',
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  linha: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#D3D1C7',
-  },
-  linhaSemBorda: {
-    borderBottomWidth: 0,
-  },
-  icone: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-  },
-  olhoBtn: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  esqueciBtn: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  esqueciSenha: {
-    fontSize: 13,
-    color: VERDE,
-  },
-  botao: {
-    width: '100%',
-    backgroundColor: VERDE,
-    borderRadius: RADIUS.pill,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  botaoBio: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: VERDE,
-    borderRadius: RADIUS.pill,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  botaoBioTexto: {
-    color: VERDE,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  textoBotao: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  criarConta: {
-    fontSize: 13,
-    color: '#666',
-  },
-  criarContaLink: {
-    color: VERDE,
-    fontWeight: '500',
-  },
-});

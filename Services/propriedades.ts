@@ -25,7 +25,8 @@ export async function criarPropriedade(dados: Omit<Propriedade, 'id'>) {
 export async function listarPropriedades(userId: string) {
   const q = query(collection(db, 'propriedades'), where('userId', '==', userId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Propriedade[];
+  const lista = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Propriedade[];
+  return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
 export async function buscarPropriedade(id: string) {
@@ -43,9 +44,21 @@ export async function atualizarPropriedade(id: string, dados: Partial<Omit<Propr
 export async function excluirPropriedade(id: string) {
   const talhoesQuery = query(collection(db, 'talhoes'), where('propriedadeId', '==', id));
   const despesasQuery = query(collection(db, 'despesas'), where('propriedadeId', '==', id));
-  const [talhoesSnapshot, despesasSnapshot] = await Promise.all([getDocs(talhoesQuery), getDocs(despesasQuery)]);
+  const plantiosQuery = query(collection(db, 'plantios'), where('propriedadeId', '==', id));
+  const [talhoesSnapshot, despesasSnapshot, plantiosSnapshot] = await Promise.all([
+    getDocs(talhoesQuery),
+    getDocs(despesasQuery),
+    getDocs(plantiosQuery),
+  ]);
 
-  const allDocs = [doc(db, 'propriedades', id), ...talhoesSnapshot.docs.map((d) => d.ref), ...despesasSnapshot.docs.map((d) => d.ref)];
+  // A propriedade vai por último: as regras do Firestore conferem o dono dos talhões,
+  // despesas e plantios pela propriedade, então ela precisa existir até o último lote.
+  const allDocs = [
+    ...talhoesSnapshot.docs.map((d) => d.ref),
+    ...despesasSnapshot.docs.map((d) => d.ref),
+    ...plantiosSnapshot.docs.map((d) => d.ref),
+    doc(db, 'propriedades', id),
+  ];
 
   // Firestore batch limit 500 — chunk em lotes de 400
   for (let i = 0; i < allDocs.length; i += 400) {

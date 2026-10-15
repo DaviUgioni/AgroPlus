@@ -1,14 +1,15 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FlatList, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { Text, YStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades } from '../Services/propriedades';
 import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plantio } from '../Services/plantios';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { cores } from '../tamagui.config';
+import { Cabecalho, Carregando, EstadoVazio, ItemLista, Tela } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type NavProp = NavigationProp<RootStackParamList>;
@@ -75,111 +76,51 @@ export default function ResumoColheitas() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <BotaoVoltar />
-        <Text style={styles.titulo}>Colheitas</Text>
-      </View>
+    <Tela edges={['top', 'left', 'right']}>
+      <Cabecalho titulo="Colheitas" subtitulo="Ordenadas pela mais próxima" />
 
       {carregando ? (
-        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
+        <Carregando />
       ) : linhas.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.vazio}>Nenhum plantio cadastrado ainda.</Text>
-        </View>
+        <EstadoVazio icone="feather" texto="Nenhum plantio cadastrado ainda." />
       ) : (
         <FlatList
           data={linhas}
           keyExtractor={(item) => item.plantio.id!}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
+          showsVerticalScrollIndicator={false}
           refreshing={atualizando}
           onRefresh={handleAtualizar}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.item}
+            <ItemLista
+              titulo={item.plantio.tipoNome}
+              subtitulo={`${item.propriedadeNome} · ${item.plantio.talhaoNome ?? 'Propriedade toda'}`}
               onPress={() =>
                 navigation.navigate('PlantiosLista', {
                   propriedadeId: item.propriedadeId,
                   propriedadeNome: item.propriedadeNome,
                 })
               }
+              esquerda={
+                <YStack
+                  width={40}
+                  height={40}
+                  borderRadius="full"
+                  backgroundColor={item.pronto ? 'alertaSuave' : 'verdeSuave'}
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Feather name="feather" size={18} color={item.pronto ? cores.alerta : cores.verde} />
+                </YStack>
+              }
             >
-              <View style={styles.itemEsquerda}>
-                <Feather name="feather" size={16} color={COLORS.verde} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itemTipo}>{item.plantio.tipoNome}</Text>
-                <Text style={styles.itemDetalhe}>
-                  {item.propriedadeNome} · {item.plantio.talhaoNome ?? 'Propriedade toda'}
-                </Text>
-                <Text style={[styles.itemEstimativa, item.pronto && styles.itemEstimativaPronta]}>{item.texto}</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="#999" />
-            </TouchableOpacity>
+              <Text fontSize={13} fontWeight="600" color={item.pronto ? 'alerta' : 'verde'} marginTop={4}>
+                {item.texto}
+              </Text>
+            </ItemLista>
           )}
         />
       )}
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  vazio: {
-    textAlign: 'center',
-    color: '#888',
-    fontSize: 14,
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    marginBottom: 10,
-  },
-  itemEsquerda: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemTipo: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  itemDetalhe: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  itemEstimativa: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.verde,
-    marginTop: 4,
-  },
-  itemEstimativaPronta: {
-    color: '#c0392b',
-  },
-});

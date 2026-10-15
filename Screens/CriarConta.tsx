@@ -1,11 +1,6 @@
 // Screens/CriarConta.tsx
 import { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  TextInput,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -15,12 +10,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
+import { Text, XStack, YStack } from 'tamagui';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
+import { cores } from '../tamagui.config';
 import BotaoVoltar from '../Components/BotaoVoltar';
+import { Botao, Campo, Subtitulo, Titulo } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type CriarContaNavigationProp = NavigationProp<RootStackParamList, 'CriarConta'>;
@@ -31,8 +27,6 @@ export default function CriarConta() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmacaoSenha, setConfirmacaoSenha] = useState('');
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [emailErro, setEmailErro] = useState('');
 
@@ -41,15 +35,15 @@ export default function CriarConta() {
   }
 
   function forcaSenha(s: string): { nivel: 0 | 1 | 2 | 3; label: string; cor: string } {
-    if (!s) return { nivel: 0, label: '', cor: '#eee' };
+    if (!s) return { nivel: 0, label: '', cor: cores.bege };
     let score = 0;
     if (s.length >= 6) score++;
     if (s.length >= 8 && /[A-Z]/.test(s)) score++;
     if (/[0-9]/.test(s) && /[a-z]/.test(s)) score++;
     if (/[^A-Za-z0-9]/.test(s)) score++;
-    if (score <= 1) return { nivel: 1, label: 'Fraca', cor: '#E74C3C' };
-    if (score === 2) return { nivel: 2, label: 'Média', cor: '#F1C40F' };
-    return { nivel: 3, label: 'Forte', cor: '#2ECC71' };
+    if (score <= 1) return { nivel: 1, label: 'Fraca', cor: cores.erro };
+    if (score === 2) return { nivel: 2, label: 'Média', cor: cores.alerta };
+    return { nivel: 3, label: 'Forte', cor: cores.verde };
   }
 
   async function handleCriarConta() {
@@ -100,214 +94,110 @@ export default function CriarConta() {
     }
   }
 
+  const forca = forcaSenha(senha);
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={styles.header}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: cores.branco }}>
+      <XStack paddingHorizontal={20} marginTop={8}>
         <BotaoVoltar />
-      </View>
+      </XStack>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.container}>
-              <Text style={styles.title}>Criar conta</Text>
+            <YStack flex={1} justifyContent="center" padding={24}>
+              <Titulo fontSize={26}>Criar conta</Titulo>
+              <Subtitulo marginTop={4} marginBottom={12}>
+                Cadastre-se para começar a gerenciar suas propriedades
+              </Subtitulo>
 
-            <Text style={styles.label}>E-mail</Text>
-            <TextInput
-              style={[styles.input, emailErro ? styles.inputErro : null]}
-              value={email}
-              onChangeText={(v) => {
-                setEmail(v);
-                const norm = v.trim().toLowerCase();
-                if (!norm) setEmailErro('');
-                else if (!isEmailValido(norm)) setEmailErro('E-mail inválido.');
-                else setEmailErro('');
-              }}
-              placeholder="seuemail@exemplo.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              returnKeyType="next"
-              onBlur={() => {
-                const norm = email.trim().toLowerCase();
-                if (norm && !isEmailValido(norm)) setEmailErro('E-mail inválido.');
-              }}
-            />
-            {emailErro ? <Text style={styles.erroTexto}>{emailErro}</Text> : null}
+              <Campo
+                rotulo="E-mail"
+                icone="mail"
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  const norm = v.trim().toLowerCase();
+                  if (!norm) setEmailErro('');
+                  else if (!isEmailValido(norm)) setEmailErro('E-mail inválido.');
+                  else setEmailErro('');
+                }}
+                erro={emailErro}
+                placeholder="seuemail@exemplo.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                returnKeyType="next"
+                onBlur={() => {
+                  const norm = email.trim().toLowerCase();
+                  if (norm && !isEmailValido(norm)) setEmailErro('E-mail inválido.');
+                }}
+              />
 
-            <Text style={styles.label}>Senha</Text>
-            <View style={styles.inputComIcone}>
-              <TextInput
-                style={styles.inputFlex}
+              <Campo
+                rotulo="Senha"
+                icone="lock"
+                senha
                 value={senha}
                 onChangeText={setSenha}
                 placeholder="Mínimo 6 caracteres"
-                secureTextEntry={!mostrarSenha}
+                ajuda={senha ? undefined : "Use 6 ou mais caracteres. Misture letras e números para ficar mais segura."}
                 returnKeyType="next"
               />
-              <TouchableOpacity
-                onPress={() => setMostrarSenha((v) => !v)}
-                hitSlop={8}
-                style={styles.olhoBtn}
-                accessibilityLabel={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                <Feather name={mostrarSenha ? 'eye-off' : 'eye'} size={18} color="#888" />
-              </TouchableOpacity>
-            </View>
-            {senha ? (
-              <View style={styles.forcaContainer}>
-                <View style={styles.forcaBarraFundo}>
-                  <View
-                    style={[
-                      styles.forcaBarra,
-                      {
-                        width: `${(forcaSenha(senha).nivel / 3) * 100}%`,
-                        backgroundColor: forcaSenha(senha).cor,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={[styles.forcaTexto, { color: forcaSenha(senha).cor }]}>{forcaSenha(senha).label}</Text>
-              </View>
-            ) : null}
+              {senha ? (
+                <XStack alignItems="center" gap={8} marginTop={8}>
+                  <YStack flex={1} height={6} backgroundColor="bege" borderRadius="full" overflow="hidden">
+                    <YStack
+                      height="100%"
+                      width={`${(forca.nivel / 3) * 100}%`}
+                      backgroundColor={forca.cor}
+                      borderRadius="full"
+                    />
+                  </YStack>
+                  <Text fontSize={13} fontWeight="600" minWidth={40} color={forca.cor}>
+                    {forca.label}
+                  </Text>
+                </XStack>
+              ) : null}
 
-            <Text style={styles.label}>Confirmar senha</Text>
-            <View style={styles.inputComIcone}>
-              <TextInput
-                style={styles.inputFlex}
+              <Campo
+                rotulo="Confirmar senha"
+                icone="lock"
+                senha
                 value={confirmacaoSenha}
                 onChangeText={setConfirmacaoSenha}
-                placeholder="Repita a senha"
-                secureTextEntry={!mostrarConfirmacao}
+                placeholder="Digite a mesma senha de novo"
+                erro={confirmacaoSenha && confirmacaoSenha !== senha ? "As senhas não são iguais." : undefined}
                 returnKeyType="done"
                 onSubmitEditing={handleCriarConta}
               />
-              <TouchableOpacity
-                onPress={() => setMostrarConfirmacao((v) => !v)}
-                hitSlop={8}
-                style={styles.olhoBtn}
-                accessibilityLabel={mostrarConfirmacao ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'}
+
+              <Botao
+                titulo={salvando ? 'Criando...' : 'Criar conta'}
+                carregando={salvando}
+                marginTop={28}
+                onPress={handleCriarConta}
+              />
+
+              <Text
+                fontSize={14}
+                color="textoSec"
+                textAlign="center"
+                marginTop={20}
+                padding={8}
+                onPress={() => navigation.navigate('Login')}
               >
-                <Feather name={mostrarConfirmacao ? 'eye-off' : 'eye'} size={18} color="#888" />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.button} onPress={handleCriarConta} disabled={salvando}>
-              <Text style={styles.buttonText}>{salvando ? 'Criando...' : 'Criar conta'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.link}>Já tenho conta. Fazer login</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableWithoutFeedback>
-      </ScrollView>
+                Já tem conta?{' '}
+                <Text color="verde" fontWeight="600">
+                  Fazer login
+                </Text>
+              </Text>
+            </YStack>
+          </TouchableWithoutFeedback>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginTop: 8,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '500',
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-    marginTop: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.sm,
-    padding: 10,
-    fontSize: 15,
-  },
-  inputErro: {
-    borderColor: '#E74C3C',
-  },
-  erroTexto: {
-    color: '#E74C3C',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  inputComIcone: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: 10,
-  },
-  inputFlex: {
-    flex: 1,
-    paddingVertical: 10,
-    fontSize: 15,
-  },
-  olhoBtn: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  forcaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 6,
-  },
-  forcaBarraFundo: {
-    flex: 1,
-    height: 6,
-    backgroundColor: '#eee',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  forcaBarra: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  forcaTexto: {
-    fontSize: 12,
-    fontWeight: '500',
-    minWidth: 40,
-  },
-  button: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.sm,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: 15,
-  },
-  link: {
-    color: COLORS.verde,
-    textAlign: 'center',
-    marginTop: 16,
-    fontSize: 13,
-  },
-});

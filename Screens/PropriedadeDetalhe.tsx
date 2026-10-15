@@ -1,18 +1,66 @@
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, Image} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ComponentProps, useState, useCallback } from 'react';
+import { FlatList, Alert, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, useFocusEffect, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { Text, XStack, YStack } from 'tamagui';
 import { buscarPropriedade, excluirPropriedade, Propriedade } from '../Services/propriedades';
 import { listarTalhoes, excluirTalhao, Talhao } from '../Services/talhoes';
 import { listarDespesasPorTalhao, totalDespesas } from '../Services/despesas';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { cores } from '../tamagui.config';
+import { BarraProgresso, Botao, Cabecalho, Cartao, EstadoVazio, Tela, TelaCarregando, TituloSecao } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type DetalheRouteProp = RouteProp<RootStackParamList, 'PropriedadeDetalhe'>;
 type DetalheNavigationProp = NavigationProp<RootStackParamList, 'PropriedadeDetalhe'>;
+type IconeFeather = ComponentProps<typeof Feather>['name'];
+
+// Botão pequeno de ícone + legenda usado nas ações de cada talhão
+function AcaoTalhao({ icone, label, cor = cores.verde, onPress }: { icone: IconeFeather; label: string; cor?: string; onPress: () => void }) {
+  return (
+    <YStack
+      flex={1}
+      alignItems="center"
+      gap={4}
+      minHeight={56}
+      justifyContent="center"
+      paddingVertical={8}
+      borderRadius="lg"
+      backgroundColor="transparent press:begeClaro"
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Feather name={icone} size={19} color={cor} />
+      <Text fontSize={13} fontWeight="600" color={cor} textAlign="center">
+        {label}
+      </Text>
+    </YStack>
+  );
+}
+
+// Botão redondo só com ícone (editar/excluir no cabeçalho)
+function BotaoIcone({ icone, cor, label, onPress }: { icone: IconeFeather; cor: string; label: string; onPress: () => void }) {
+  return (
+    <YStack
+      width={44}
+      height={44}
+      borderRadius="full"
+      borderWidth={1}
+      borderColor="borda"
+      backgroundColor="branco press:begeClaro"
+      alignItems="center"
+      justifyContent="center"
+      onPress={onPress}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Feather name={icone} size={18} color={cor} />
+    </YStack>
+  );
+}
 
 export default function PropriedadeDetalhe() {
   const navigation = useNavigation<DetalheNavigationProp>();
@@ -67,7 +115,7 @@ export default function PropriedadeDetalhe() {
   );
 
   function handleExcluirPropriedade() {
-    Alert.alert('Excluir propriedade', 'Tem certeza? Todos os talhões vinculados também serão excluídos.', [
+    Alert.alert('Excluir propriedade', 'Tem certeza? Os talhões, plantios e despesas desta propriedade também serão apagados. Não dá para desfazer.', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir',
@@ -103,312 +151,160 @@ export default function PropriedadeDetalhe() {
   }
 
   if (carregando) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.verde} />
-      </SafeAreaView>
-    );
+    return <TelaCarregando />;
   }
 
   if (!propriedade) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <Text>Propriedade não encontrada.</Text>
-      </SafeAreaView>
+      <Tela>
+        <Cabecalho titulo="Propriedade" />
+        <EstadoVazio icone="alert-circle" texto="Propriedade não encontrada." />
+      </Tela>
     );
   }
 
+  const formatarMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const areaUsada = talhoes.reduce((soma, t) => soma + (t.area || 0), 0);
+
   return (
-    <SafeAreaView style={[styles.container, { paddingTop: 8, paddingBottom: Math.max(insets.bottom, 12) }]} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <BotaoVoltar style={styles.botaoVoltar} />
-        <View style={{ flex: 1, flexShrink: 1, marginRight: 12 }}>
-          <Text style={styles.nome} numberOfLines={2}>{propriedade.nome}</Text>
-          <Text style={styles.info} numberOfLines={2}>
-            {propriedade.localizacao} · {propriedade.areaTotal} ha
-          </Text>
-        </View>
+    <Tela edges={['top', 'left', 'right']}>
+      <FlatList
+        data={talhoes}
+        keyExtractor={(item) => item.id!}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 12) + 16 }}
+        ListHeaderComponent={
+          <>
+            <Cabecalho
+              titulo={propriedade.nome}
+              subtitulo={`${propriedade.localizacao} · ${propriedade.areaTotal} ha`}
+              direita={
+                <XStack gap={8}>
+                  <BotaoIcone
+                    icone="edit-2"
+                    cor={cores.textoSec}
+                    label="Editar propriedade"
+                    onPress={() => navigation.navigate('PropriedadeForm', { propriedadeId })}
+                  />
+                  <BotaoIcone icone="trash-2" cor={cores.erro} label="Excluir propriedade" onPress={handleExcluirPropriedade} />
+                </XStack>
+              }
+            />
 
-        <View style={styles.headerAcoes}>
-          <TouchableOpacity
-            style={styles.acaoBotao}
-            onPress={() => navigation.navigate('PropriedadeForm', { propriedadeId })}
-            hitSlop={8}
-            accessibilityLabel="Editar propriedade"
-          >
-            <Feather name="edit-2" size={18} color="#666" />
-          </TouchableOpacity>
+            {propriedade.imagemUrl && (
+              <Image
+                source={{ uri: propriedade.imagemUrl }}
+                style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 20, backgroundColor: cores.bege }}
+              />
+            )}
 
-          <TouchableOpacity
-            style={styles.acaoBotao}
-            onPress={handleExcluirPropriedade}
-            hitSlop={8}
-            accessibilityLabel="Excluir propriedade"
-          >
-            <Feather name="trash-2" size={18} color="#c0392b" />
-          </TouchableOpacity>
-        </View>
-      </View>
+            {talhoes.length > 0 && (
+              <Cartao tom="bege" marginBottom={16} gap={8}>
+                <XStack justifyContent="space-between">
+                  <Text fontSize={14} fontWeight="600" color="texto">
+                    Área dividida em talhões
+                  </Text>
+                  <Text fontSize={14} fontWeight="700" color="verde">
+                    {areaUsada.toLocaleString('pt-BR')} de {propriedade.areaTotal.toLocaleString('pt-BR')} ha
+                  </Text>
+                </XStack>
+                <BarraProgresso valor={areaUsada / (propriedade.areaTotal || 1)} fundo="branco" />
+              </Cartao>
+            )}
 
-      {propriedade.imagemUrl && (
-        <Image source={{ uri: propriedade.imagemUrl }} style={styles.imagem} />
-      )}
-
-      <View style={styles.talhoesHeader}>
-        <Text style={styles.talhoesTitulo}>Talhões</Text>
-      </View>
-
-      {talhoes.length === 0 ? (
-        <View>
-          <Text style={styles.vazio}>Nenhum talhão cadastrado ainda.</Text>
-
-          <TouchableOpacity
-            style={styles.botaoNovoTalhao}
-            onPress={() => navigation.navigate('TalhaoForm', { propriedadeId })}
-          >
-            <Feather name="plus" size={16} color="#fff" />
-            <Text style={styles.botaoNovoTexto}>Novo talhão</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={talhoes}
-          keyExtractor={(item) => item.id!}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listaTalhoes}
-          ListFooterComponent={
-            <TouchableOpacity
-              style={styles.botaoNovoTalhao}
-              onPress={() => navigation.navigate('TalhaoForm', { propriedadeId })}
-            >
-              <Feather name="plus" size={16} color="#fff" />
-              <Text style={styles.botaoNovoTexto}>Novo talhão</Text>
-            </TouchableOpacity>
-          }
-          renderItem={({ item }) => (
-            <View style={styles.talhaoItem}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.talhaoNome}>{item.nome}</Text>
-                <Text style={styles.talhaoInfo}>
-                  {item.area} ha • {(totaisPorTalhao[item.id!] ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            <XStack alignItems="center" justifyContent="space-between" marginBottom={4}>
+              <TituloSecao marginBottom={0}>Talhões</TituloSecao>
+              <Botao
+                variante="texto"
+                tamanho="sm"
+                icone="plus"
+                titulo="Novo talhão"
+                onPress={() => navigation.navigate('TalhaoForm', { propriedadeId })}
+              />
+            </XStack>
+          </>
+        }
+        ListEmptyComponent={
+          <EstadoVazio
+            icone="grid"
+            titulo="Nenhum talhão ainda"
+            texto="Talhões são as partes da propriedade (ex.: &quot;Área do milho&quot;, &quot;Pasto&quot;). Eles ajudam a separar plantios e gastos de cada área."
+            acao={{ titulo: 'Cadastrar talhão', onPress: () => navigation.navigate('TalhaoForm', { propriedadeId }) }}
+            marginTop={8}
+            marginBottom={16}
+          />
+        }
+        renderItem={({ item }) => (
+          <Cartao marginBottom={10} padding={0} overflow="hidden">
+            <XStack alignItems="center" justifyContent="space-between" padding={14}>
+              <YStack flex={1}>
+                <Text fontSize={15} fontWeight="600" color="texto">
+                  {item.nome}
                 </Text>
-              </View>
-
-              <View style={styles.talhaoAcoes}>
-                <TouchableOpacity
-                  style={styles.acaoBotaoIcon}
-                  onPress={() => navigation.navigate('DespesasLista', { propriedadeId, talhaoId: item.id, talhaoNome: item.nome })}
-                  accessibilityLabel="Ver gastos do talhão"
-                >
-                  <Feather name="list" size={16} color={COLORS.verde} />
-                  <Text style={styles.acaoIconLabel}>Gastos</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.acaoBotaoIcon}
-                  onPress={() => navigation.navigate('DespesaForm', { propriedadeId, talhaoId: item.id })}
-                  accessibilityLabel="Nova despesa no talhão"
-                >
-                  <Feather name="plus-circle" size={16} color={COLORS.verde} />
-                  <Text style={styles.acaoIconLabel}>Novo</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.acaoBotaoIcon}
-                  onPress={() =>
-                    navigation.navigate('TalhaoForm', {
-                      propriedadeId,
-                      talhaoId: item.id,
-                    })
-                  }
-                  accessibilityLabel="Editar talhão"
-                >
-                  <Feather name="edit-2" size={14} color="#666" />
-                  <Text style={styles.acaoIconLabel}>Editar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.acaoBotaoIcon}
-                  onPress={() => handleExcluirTalhao(item.id!)}
-                  accessibilityLabel="Excluir talhão"
-                >
-                  <Feather name="trash-2" size={14} color="#c0392b" />
-                  <Text style={[styles.acaoIconLabel, { color: '#c0392b' }]}>Excluir</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        />
-      )}
-
-      <View style={styles.despesasHeader}>
-        <Text style={styles.talhoesTitulo}>Despesas</Text>
-
-        <TouchableOpacity
-          style={styles.botaoNovo}
-          onPress={() => navigation.navigate('DespesaForm', { propriedadeId })}
-        >
-          <Feather name="plus" size={14} color="#fff" />
-          <Text style={styles.botaoNovoTexto}>Nova despesa</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+                <Text fontSize={13} color="textoSec" marginTop={2}>
+                  {item.area} ha
+                </Text>
+              </YStack>
+              <YStack alignItems="flex-end">
+                <Text fontSize={13} color="textoSec">
+                  Total gasto
+                </Text>
+                <Text fontSize={14} fontWeight="700" color="verde">
+                  {formatarMoeda(totaisPorTalhao[item.id!] ?? 0)}
+                </Text>
+              </YStack>
+            </XStack>
+            <XStack borderTopWidth={1} borderTopColor="borda" paddingHorizontal={6}>
+              <AcaoTalhao
+                icone="list"
+                label="Despesas"
+                onPress={() => navigation.navigate('DespesasLista', { propriedadeId, talhaoId: item.id, talhaoNome: item.nome })}
+              />
+              <AcaoTalhao
+                icone="plus-circle"
+                label="Nova despesa"
+                onPress={() => navigation.navigate('DespesaForm', { propriedadeId, talhaoId: item.id })}
+              />
+              <AcaoTalhao
+                icone="edit-2"
+                label="Editar"
+                cor={cores.textoSec}
+                onPress={() => navigation.navigate('TalhaoForm', { propriedadeId, talhaoId: item.id })}
+              />
+              <AcaoTalhao icone="trash-2" label="Excluir" cor={cores.erro} onPress={() => handleExcluirTalhao(item.id!)} />
+            </XStack>
+          </Cartao>
+        )}
+        ListFooterComponent={
+          <Cartao tom="bege" marginTop={12} gap={12}>
+            <YStack>
+              <Text fontSize={15} fontWeight="600" color="texto">
+                Despesas da propriedade
+              </Text>
+              <Text fontSize={13} color="textoSec" marginTop={2}>
+                Lance gastos gerais ou consulte o histórico
+              </Text>
+            </YStack>
+            <XStack gap={8}>
+              <Botao
+                flex={1}
+                variante="contorno"
+                tamanho="sm"
+                icone="list"
+                titulo="Ver despesas"
+                onPress={() => navigation.navigate('DespesasLista', { propriedadeId })}
+              />
+              <Botao
+                flex={1}
+                tamanho="sm"
+                icone="plus"
+                titulo="Nova despesa"
+                onPress={() => navigation.navigate('DespesaForm', { propriedadeId })}
+              />
+            </XStack>
+          </Cartao>
+        }
+      />
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-  },
-
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginTop: 16,
-    marginBottom: 24,
-  },
-
-  nome: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-
-  info: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
-  },
-
-  imagem: {
-    width: '100%',
-    height: 180,
-    borderRadius: RADIUS.md,
-    marginBottom: 16,
-    backgroundColor: '#eee',
-  },
-
-  headerAcoes: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flexShrink: 0,
-  },
-
-  acaoBotao: {
-    padding: 6,
-  },
-  botaoVoltar: {
-    marginRight: 4,
-    marginLeft: -6,
-    padding: 6,
-  },
-  acaoBotaoIcon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    padding: 6,
-    minWidth: 44,
-  },
-  acaoIconLabel: {
-    fontSize: 9,
-    color: COLORS.verde,
-    fontWeight: '600',
-  },
-
-  talhoesHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-
-  talhoesTitulo: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-
-  botaoNovoTalhao: {
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.md,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginTop: 2,
-    marginBottom: 15,
-    gap: 6,
-  },
-
-  botaoNovo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.md,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    gap: 5,
-  },
-
-  botaoNovoTexto: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-
-  vazio: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 40,
-    fontSize: 14,
-  },
-
-  listaTalhoes: {
-    paddingBottom: 10,
-  },
-
-  talhaoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    marginBottom: 10,
-  },
-
-  talhaoNome: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-
-  talhaoInfo: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-
-  talhaoAcoes: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexShrink: 0,
-  },
-
-  despesasHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 12,
-    paddingBottom: 20,
-  },
-});

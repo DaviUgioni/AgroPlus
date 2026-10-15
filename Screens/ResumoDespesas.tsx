@@ -1,25 +1,19 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FlatList, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { Text, XStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades } from '../Services/propriedades';
-import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, CategoriaDespesa } from '../Services/despesas';
+import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, CategoriaDespesa, LABELS_CATEGORIA } from '../Services/despesas';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { cores } from '../tamagui.config';
+import { Cabecalho, Carregando, Cartao, Chip, EstadoVazio, ItemLista, Tela, TituloSecao } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type ResumoDespesasRouteProp = RouteProp<RootStackParamList, 'ResumoDespesas'>;
 type NavProp = NavigationProp<RootStackParamList>;
-
-const LABELS_CATEGORIA: Record<CategoriaDespesa, string> = {
-  insumo: 'Insumo',
-  mao_de_obra: 'Mão de obra',
-  maquinario: 'Maquinário',
-  outros: 'Outros',
-};
 
 interface LinhaPropriedade {
   propriedadeId: string;
@@ -107,185 +101,71 @@ export default function ResumoDespesas() {
   const formatarMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <BotaoVoltar />
-        <Text style={styles.titulo}>Gastos por propriedade</Text>
-      </View>
+    <Tela edges={['top', 'left', 'right']}>
+      <Cabecalho titulo="Gastos por propriedade" />
 
-      <View style={styles.chips}>
-        <TouchableOpacity
-          style={[styles.chip, periodo === 'mes' && styles.chipAtivo]}
-          onPress={() => setPeriodo('mes')}
-        >
-          <Text style={[styles.chipTexto, periodo === 'mes' && styles.chipTextoAtivo]}>Este mês</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.chip, periodo === 'ano' && styles.chipAtivo]}
-          onPress={() => setPeriodo('ano')}
-        >
-          <Text style={[styles.chipTexto, periodo === 'ano' && styles.chipTextoAtivo]}>Este ano</Text>
-        </TouchableOpacity>
-      </View>
+      <XStack gap={8} marginBottom={16}>
+        <Chip texto="Este mês" ativo={periodo === 'mes'} onPress={() => setPeriodo('mes')} />
+        <Chip texto="Este ano" ativo={periodo === 'ano'} onPress={() => setPeriodo('ano')} />
+      </XStack>
 
       {carregando ? (
-        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
+        <Carregando />
       ) : (
         <FlatList
           data={porPropriedade}
           keyExtractor={(item) => item.propriedadeId}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
+          showsVerticalScrollIndicator={false}
           refreshing={atualizando}
           onRefresh={handleAtualizar}
           ListHeaderComponent={
             <>
-              <View style={styles.totalCard}>
-                <Text style={styles.totalLabel}>Total {periodo === 'mes' ? 'do mês' : 'do ano'}</Text>
-                <Text style={styles.totalValor}>{formatarMoeda(total)}</Text>
-              </View>
+              <Cartao tom="verde" marginBottom={16}>
+                <Text fontSize={13} color="sobreVerdeSuave">
+                  Total {periodo === 'mes' ? 'do mês' : 'do ano'}
+                </Text>
+                <Text fontSize={28} fontWeight="700" color="sobreVerde" marginTop={2}>
+                  {formatarMoeda(total)}
+                </Text>
+              </Cartao>
 
               {porCategoria.length > 0 && (
-                <View style={styles.categoriaBox}>
-                  <Text style={styles.secaoTitulo}>Por categoria</Text>
+                <Cartao marginBottom={20}>
+                  <TituloSecao>Por categoria</TituloSecao>
                   {porCategoria.map((c) => (
-                    <View key={c.categoria} style={styles.categoriaLinha}>
-                      <Text style={styles.categoriaNome}>{LABELS_CATEGORIA[c.categoria]}</Text>
-                      <Text style={styles.categoriaValor}>{formatarMoeda(c.valor)}</Text>
-                    </View>
+                    <XStack key={c.categoria} justifyContent="space-between" paddingVertical={6}>
+                      <Text fontSize={14} color="texto">
+                        {LABELS_CATEGORIA[c.categoria]}
+                      </Text>
+                      <Text fontSize={14} fontWeight="600" color="verde">
+                        {formatarMoeda(c.valor)}
+                      </Text>
+                    </XStack>
                   ))}
-                </View>
+                </Cartao>
               )}
 
-              {porPropriedade.length > 0 && <Text style={styles.secaoTitulo}>Por propriedade</Text>}
+              {porPropriedade.length > 0 && <TituloSecao>Por propriedade</TituloSecao>}
             </>
           }
-          ListEmptyComponent={<Text style={styles.vazio}>Nenhuma despesa nesse período.</Text>}
+          ListEmptyComponent={<EstadoVazio icone="dollar-sign" texto="Nenhuma despesa nesse período." marginTop={16} />}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.item}
+            <ItemLista
+              titulo={item.nome}
               onPress={() => navigation.navigate('DespesasLista', { propriedadeId: item.propriedadeId })}
-            >
-              <Text style={styles.itemNome}>{item.nome}</Text>
-              <View style={styles.itemDireita}>
-                <Text style={styles.itemValor}>{formatarMoeda(item.valor)}</Text>
-                <Feather name="chevron-right" size={18} color="#999" />
-              </View>
-            </TouchableOpacity>
+              direita={
+                <XStack alignItems="center" gap={6}>
+                  <Text fontSize={14} fontWeight="600" color="verde">
+                    {formatarMoeda(item.valor)}
+                  </Text>
+                  <Feather name="chevron-right" size={18} color={cores.textoTerc} />
+                </XStack>
+              }
+            />
           )}
         />
       )}
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 12,
-  },
-  titulo: {
-    fontSize: 18,
-    fontWeight: '500',
-  },
-  chips: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  chipAtivo: {
-    backgroundColor: COLORS.verde,
-    borderColor: COLORS.verde,
-  },
-  chipTexto: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#666',
-  },
-  chipTextoAtivo: {
-    color: '#fff',
-  },
-  totalCard: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.md,
-    padding: 16,
-    marginBottom: 16,
-  },
-  totalLabel: {
-    fontSize: 13,
-    color: '#EAF3DE',
-  },
-  totalValor: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#fff',
-    marginTop: 2,
-  },
-  categoriaBox: {
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    marginBottom: 16,
-  },
-  secaoTitulo: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 8,
-  },
-  categoriaLinha: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  categoriaNome: {
-    fontSize: 13,
-    color: COLORS.texto,
-  },
-  categoriaValor: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.verde,
-  },
-  vazio: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 24,
-    fontSize: 14,
-  },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    marginBottom: 10,
-  },
-  itemNome: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  itemDireita: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  itemValor: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.verde,
-  },
-});

@@ -1,130 +1,158 @@
 // Screens/Home.tsx
+import { ComponentProps, useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { Image, ScrollView } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { signOut } from 'firebase/auth';
-import { auth } from '../FirebaseConfig';
+import { Text, XStack, YStack } from 'tamagui';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { auth, db } from '../FirebaseConfig';
+import { nomeDoUsuario } from '../Services/conta';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
+import { cores } from '../tamagui.config';
+import { Botao, Cartao, Subtitulo, Tela, Titulo } from '../Components/ui';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
+type Atalho = {
+  rota: 'Propriedades' | 'Plantios' | 'Despesas' | 'Resumo';
+  titulo: string;
+  descricao: string;
+  icone: ComponentProps<typeof Ionicons>['name'];
+};
+
+const ATALHOS: Atalho[] = [
+  { rota: 'Propriedades', titulo: 'Propriedades', descricao: 'Suas áreas e talhões', icone: 'map-outline' },
+  { rota: 'Plantios', titulo: 'Plantios', descricao: 'O que foi plantado e quando colher', icone: 'leaf-outline' },
+  { rota: 'Despesas', titulo: 'Despesas', descricao: 'Gastos e notas fiscais', icone: 'cash-outline' },
+  { rota: 'Resumo', titulo: 'Resumo', descricao: 'Números gerais da produção', icone: 'bar-chart-outline' },
+];
+
+const PASSOS = [
+  { titulo: 'Cadastre sua propriedade', texto: 'Nome, localização e tamanho em hectares.' },
+  { titulo: 'Divida em talhões', texto: 'Talhões são as partes da propriedade, como "Área do milho".' },
+  { titulo: 'Registre plantios e despesas', texto: 'O app calcula a colheita e soma seus gastos.' },
+];
+
 export default function Home() {
   const navigation = useNavigation<HomeNavigationProp>();
-  const insets = useSafeAreaInsets();
+  const [totalPropriedades, setTotalPropriedades] = useState<number | null>(null);
+  const [nome, setNome] = useState(nomeDoUsuario());
 
-  function handleSair() {
-    Alert.alert('Sair', 'Deseja realmente sair da sua conta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut(auth);
-            navigation.navigate('Login' as never);
-          } catch {
-            Alert.alert('Erro', 'Não foi possível sair.');
-          }
-        },
-      },
-    ]);
-  }
+  // Conta as propriedades para decidir se mostra os "primeiros passos".
+  // Sem internet o Firestore responde só com o cache (que pode estar vazio);
+  // nesse caso não dá para afirmar que a conta não tem propriedades.
+  useFocusEffect(
+    useCallback(() => {
+      setNome(nomeDoUsuario()); // pode ter mudado nas Configurações
+      const userId = auth.currentUser?.uid;
+      if (!userId) return;
+      getDocs(query(collection(db, 'propriedades'), where('userId', '==', userId)))
+        .then((snap) => setTotalPropriedades(snap.empty && snap.metadata.fromCache ? null : snap.size))
+        .catch(() => setTotalPropriedades(null));
+    }, [])
+  );
+
+  const semPropriedades = totalPropriedades === 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-      <TouchableOpacity onPress={handleSair} style={[styles.sairBtn, { top: insets.top + 8 }]}>
-        <Ionicons name="log-out-outline" size={18} color={COLORS.verde} />
-        <Text style={styles.sairTexto}>Sair</Text>
-      </TouchableOpacity>
-      <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-      <Text style={styles.titulo}>Bem-vindo ao AgroPlus</Text>
-      <Text style={styles.subtitulo}>Gerencie sua produção com facilidade</Text>
+    <Tela>
+      <XStack alignItems="center" justifyContent="space-between" marginTop={12}>
+        <XStack alignItems="center" gap={8}>
+          <Image source={require('../assets/logo.png')} style={{ width: 32, height: 32 }} resizeMode="contain" />
+          <Text fontSize={18} fontWeight="700" color="verde">
+            AgroPlus
+          </Text>
+        </XStack>
+        <Botao
+          variante="contorno"
+          tamanho="sm"
+          icone="settings"
+          titulo="Configurações"
+          onPress={() => navigation.navigate('Configuracoes')}
+        />
+      </XStack>
 
-      <View style={styles.grid}>
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Propriedades')}>
-          <Ionicons name="map-outline" size={28} color="#fff" />
-          <Text style={styles.cardText}>Propriedades</Text>
-        </TouchableOpacity>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingVertical: 24 }}
+      >
+        <Titulo fontSize={28}>{nome ? `Olá, ${nome}!` : 'Bem-vindo!'}</Titulo>
+        <Subtitulo marginTop={4} marginBottom={24}>
+          {semPropriedades ? 'Vamos configurar sua produção em 3 passos.' : 'O que você quer fazer hoje?'}
+        </Subtitulo>
 
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Plantios')}>
-          <Ionicons name="leaf-outline" size={28} color="#fff" />
-          <Text style={styles.cardText}>Plantios</Text>
-        </TouchableOpacity>
+        {semPropriedades && (
+          <Cartao marginBottom={20} gap={14}>
+            {PASSOS.map((p, i) => (
+              <XStack key={p.titulo} gap={12} alignItems="flex-start">
+                <YStack
+                  width={30}
+                  height={30}
+                  borderRadius="full"
+                  backgroundColor={i === 0 ? 'verde' : 'verdeSuave'}
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Text fontSize={14} fontWeight="700" color={i === 0 ? 'sobreVerde' : 'verde'}>
+                    {i + 1}
+                  </Text>
+                </YStack>
+                <YStack flex={1}>
+                  <Text fontSize={15} fontWeight="600" color="texto">
+                    {p.titulo}
+                  </Text>
+                  <Text fontSize={13} color="textoSec" marginTop={2}>
+                    {p.texto}
+                  </Text>
+                </YStack>
+              </XStack>
+            ))}
+            <Botao
+              icone="plus"
+              titulo="Cadastrar minha propriedade"
+              marginTop={4}
+              onPress={() => navigation.navigate('PropriedadeForm')}
+            />
+          </Cartao>
+        )}
 
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Despesas')}>
-          <Ionicons name="cash-outline" size={28} color="#fff" />
-          <Text style={styles.cardText}>Despesas</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Resumo')}>
-          <Ionicons name="bar-chart-outline" size={28} color="#fff" />
-          <Text style={styles.cardText}>Resumo</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        <YStack gap={14}>
+          {ATALHOS.map((a) => (
+            <Cartao
+              key={a.rota}
+              interativo
+              flexDirection="row"
+              alignItems="center"
+              minHeight={110}
+              gap={16}
+              onPress={() => navigation.navigate(a.rota)}
+              accessibilityRole="button"
+              accessibilityLabel={`${a.titulo}: ${a.descricao}`}
+            >
+              <YStack
+                width={60}
+                height={60}
+                borderRadius="2xl"
+                backgroundColor="verde"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Ionicons name={a.icone} size={30} color={cores.sobreVerde} />
+              </YStack>
+              <YStack flex={1}>
+                <Text fontSize={19} fontWeight="600" color="texto">
+                  {a.titulo}
+                </Text>
+                <Text fontSize={14} color="textoSec" marginTop={2}>
+                  {a.descricao}
+                </Text>
+              </YStack>
+              <Ionicons name="chevron-forward" size={22} color={cores.textoSec} />
+            </Cartao>
+          ))}
+        </YStack>
+      </ScrollView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-  },
-  logo: {
-    width: 64,
-    height: 64,
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  titulo: {
-    fontSize: 24,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subtitulo: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  grid: {
-    gap: 16,
-    width: '100%',
-  },
-  card: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.lg,
-    padding: 24,
-    alignItems: 'center',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  cardText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  sairBtn: {
-    position: 'absolute',
-    top: 12,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    padding: 8,
-  },
-  sairTexto: {
-    color: COLORS.verde,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-});

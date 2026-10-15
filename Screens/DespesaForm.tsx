@@ -1,18 +1,26 @@
-import { Picker } from '@react-native-picker/picker';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Image, Switch, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Image, Switch, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Timestamp } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
+import { Text, XStack, YStack } from 'tamagui';
 import { criarDespesa, atualizarDespesa, buscarDespesa, CategoriaDespesa } from '../Services/despesas';
 import { listarTalhoes, Talhao } from '../Services/talhoes';
 import { enviarNotaFiscal } from '../Services/imagens';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { cores } from '../tamagui.config';
+import { Botao, Cabecalho, Campo, Cartao, Chip, Rotulo, Seletor, Tela, TelaCarregando } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
+
+const CATEGORIAS: { valor: CategoriaDespesa; label: string }[] = [
+  { valor: 'insumo', label: 'Insumo' },
+  { valor: 'mao_de_obra', label: 'Mão de obra' },
+  { valor: 'maquinario', label: 'Maquinário' },
+  { valor: 'outros', label: 'Outros' },
+];
+
+const OPCOES_MESES = [2, 3, 6, 12];
 
 type DespesaFormRouteProp = RouteProp<RootStackParamList, 'DespesaForm'>;
 type DespesaFormNavProp = NavigationProp<RootStackParamList, 'DespesaForm'>;
@@ -104,17 +112,17 @@ export default function DespesaForm() {
   }
 
   const handleSalvar = async () => {
-    if (!descricao.trim()) {
-      Alert.alert('Atenção', 'Preencha a descrição.');
-      return;
-    }
     if (!valor.trim()) {
-      Alert.alert('Atenção', 'Preencha o valor.');
+      Alert.alert('Falta o valor', 'Informe quanto custou, por exemplo 150,50.');
       return;
     }
     const valorNum = parseFloat(valor.replace(',', '.'));
     if (isNaN(valorNum) || !isFinite(valorNum) || valorNum <= 0) {
-      Alert.alert('Atenção', 'Valor inválido. Digite apenas números, ex: 150,50');
+      Alert.alert('Valor inválido', 'Digite só números, por exemplo 150,50.');
+      return;
+    }
+    if (!descricao.trim()) {
+      Alert.alert('Falta a descrição', 'Escreva com o que foi gasto, por exemplo "Adubo".');
       return;
     }
     if (!propriedadeId) {
@@ -181,206 +189,136 @@ export default function DespesaForm() {
   };
 
   if (carregando) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.verde} />
-      </SafeAreaView>
-    );
+    return <TelaCarregando />;
   }
 
+  const notaAtual = notaLocal || notaUrlExistente;
+  const valorDigitado = parseFloat(valor.replace(',', '.'));
+  const erroValor =
+    valor.trim() && (isNaN(valorDigitado) || valorDigitado <= 0) ? 'Digite só números, ex.: 150,50' : undefined;
+
   return (
-    <SafeAreaView style={styles.container}>
+    <Tela>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-        <View style={styles.headerRow}>
-          <BotaoVoltar />
-          <Text style={styles.titulo}>{modoEdicao ? 'Editar Despesa' : 'Nova Despesa'}</Text>
-        </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          <Cabecalho
+            titulo={modoEdicao ? 'Editar despesa' : 'Nova despesa'}
+            subtitulo={modoEdicao ? undefined : 'Será registrada com a data de hoje'}
+          />
 
-        <Text style={styles.label}>Categoria</Text>
-        <View style={styles.input}>
-          <Picker selectedValue={categoria} onValueChange={setCategoria} style={styles.picker}>
-            <Picker.Item label="Insumo" value="insumo" />
-            <Picker.Item label="Mão de Obra" value="mao_de_obra" />
-            <Picker.Item label="Maquinário" value="maquinario" />
-            <Picker.Item label="Outros" value="outros" />
-          </Picker>
-        </View>
+          <Campo
+            rotulo="Quanto custou? (R$)"
+            icone="dollar-sign"
+            value={valor}
+            onChangeText={setValor}
+            placeholder="Ex.: 150,50"
+            keyboardType="numeric"
+            erro={erroValor}
+            ajuda="Use vírgula para os centavos."
+          />
 
-        <Text style={styles.label}>Talhão</Text>
-        <View style={styles.input}>
-          <Picker selectedValue={talhaoSel ?? 'geral'} onValueChange={(v) => setTalhaoSel(v === 'geral' ? undefined : (v as string))} style={styles.picker}>
-            <Picker.Item label="Geral — propriedade toda" value="geral" />
-            {talhoes.map((t) => (
-              <Picker.Item key={t.id} label={t.nome} value={t.id} />
+          <Campo
+            rotulo="Com o que foi gasto?"
+            value={descricao}
+            onChangeText={setDescricao}
+            placeholder="Ex.: Adubo NPK, diária do trator"
+            maxLength={120}
+          />
+
+          <Rotulo>Categoria</Rotulo>
+          <XStack flexWrap="wrap" gap={8}>
+            {CATEGORIAS.map((c) => (
+              <Chip key={c.valor} texto={c.label} ativo={categoria === c.valor} onPress={() => setCategoria(c.valor)} />
             ))}
-          </Picker>
-        </View>
+          </XStack>
 
-        <Text style={styles.label}>Descrição</Text>
-        <TextInput
-          style={styles.input}
-          value={descricao}
-          onChangeText={setDescricao}
-          placeholder="Descrição da despesa"
-          maxLength={120}
-        />
+          <Seletor
+            rotulo="Onde foi usado?"
+            valor={talhaoSel ?? 'geral'}
+            aoMudar={(v) => setTalhaoSel(v === 'geral' ? undefined : v)}
+            ajuda="Escolha um talhão ou deixe a propriedade toda."
+            opcoes={[
+              { label: 'Propriedade toda', valor: 'geral' },
+              ...talhoes.map((t) => ({ label: `Talhão: ${t.nome}`, valor: t.id! })),
+            ]}
+          />
 
-        <Text style={styles.label}>Valor (R$)</Text>
-        <TextInput
-          style={styles.input}
-          value={valor}
-          onChangeText={setValor}
-          placeholder="0,00"
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Nota fiscal (foto)</Text>
-        <View style={styles.notaContainer}>
-          {(notaLocal || notaUrlExistente) && (
-            <Image source={{ uri: notaLocal || notaUrlExistente! }} style={styles.notaPreview} />
-          )}
-          <View style={styles.notaBotoes}>
-            <TouchableOpacity style={styles.notaBtn} onPress={handleEscolherNota}>
-              <Feather name="camera" size={16} color={COLORS.verde} />
-              <Text style={styles.notaBtnTexto}>{notaLocal || notaUrlExistente ? 'Trocar foto' : 'Anexar foto'}</Text>
-            </TouchableOpacity>
-            {(notaLocal || notaUrlExistente) && (
-              <TouchableOpacity
-                style={styles.notaBtn}
-                onPress={handleRemoverNota}
-              >
-                <Feather name="trash-2" size={16} color="#c0392b" />
-                <Text style={[styles.notaBtnTexto, { color: '#c0392b' }]}>Remover</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {!modoEdicao && (
-          <>
-            <View style={styles.switchRow}>
-              <Text style={styles.label}>Repetir todo mês</Text>
-              <Switch value={recorrente} onValueChange={setRecorrente} trackColor={{ true: COLORS.verde }} />
-            </View>
-            {recorrente && (
-              <>
-                <Text style={styles.label}>Por quantos meses?</Text>
-                <View style={styles.input}>
-                  <Picker selectedValue={meses} onValueChange={(v) => setMeses(Number(v))} style={styles.picker}>
-                    <Picker.Item label="2 meses" value={2} />
-                    <Picker.Item label="3 meses" value={3} />
-                    <Picker.Item label="6 meses" value={6} />
-                    <Picker.Item label="12 meses" value={12} />
-                  </Picker>
-                </View>
-              </>
-            )}
-          </>
-        )}
-
-        <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
-          {salvando ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <ActivityIndicator color="#fff" />
-              {progresso && progresso.total > 1 && (
-                <Text style={styles.botaoTexto}>Salvando {progresso.atual}/{progresso.total}...</Text>
-              )}
-            </View>
+          <Rotulo>Foto da nota fiscal (opcional)</Rotulo>
+          {notaAtual ? (
+            <YStack gap={8}>
+              <Image source={{ uri: notaAtual }} style={{ width: '100%', height: 180, borderRadius: 12 }} />
+              <XStack gap={8}>
+                <Botao flex={1} variante="contorno" tamanho="sm" icone="camera" titulo="Trocar foto" onPress={handleEscolherNota} />
+                <Botao flex={1} variante="perigo" tamanho="sm" icone="trash-2" titulo="Remover" onPress={handleRemoverNota} />
+              </XStack>
+            </YStack>
           ) : (
-            <Text style={styles.botaoTexto}>Salvar</Text>
+            <XStack
+              height={56}
+              borderRadius="lg"
+              borderWidth={1.5}
+              borderStyle="dashed"
+              borderColor="bordaForte"
+              backgroundColor="branco press:verdeSuave"
+              alignItems="center"
+              justifyContent="center"
+              gap={8}
+              onPress={handleEscolherNota}
+              accessibilityRole="button"
+            >
+              <Feather name="camera" size={18} color={cores.verde} />
+              <Text fontSize={14} fontWeight="600" color="verde">
+                Anexar foto
+              </Text>
+            </XStack>
           )}
-        </TouchableOpacity>
-      </ScrollView>
+
+          {!modoEdicao && (
+            <Cartao marginTop={20} padding={14}>
+              <XStack justifyContent="space-between" alignItems="center" gap={12}>
+                <YStack flex={1}>
+                  <Text fontSize={15} fontWeight="600" color="texto">
+                    Repetir todo mês
+                  </Text>
+                  <Text fontSize={13} color="textoSec" marginTop={2}>
+                    Para gastos fixos, como salário ou aluguel. Lança o mesmo valor nos próximos meses.
+                  </Text>
+                </YStack>
+                <Switch
+                  value={recorrente}
+                  onValueChange={setRecorrente}
+                  trackColor={{ true: cores.verde, false: cores.bordaForte }}
+                  thumbColor={cores.sobreVerde}
+                />
+              </XStack>
+              {recorrente && (
+                <>
+                  <Rotulo>Por quantos meses?</Rotulo>
+                  <XStack flexWrap="wrap" gap={8}>
+                    {OPCOES_MESES.map((m) => (
+                      <Chip key={m} texto={`${m} meses`} ativo={meses === m} onPress={() => setMeses(m)} />
+                    ))}
+                  </XStack>
+                  {valorDigitado > 0 && (
+                    <Text fontSize={13} color="textoSec" marginTop={10}>
+                      Serão lançadas {meses} despesas de{' '}
+                      {valorDigitado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}, uma por mês, a
+                      partir de hoje.
+                    </Text>
+                  )}
+                </>
+              )}
+            </Cartao>
+          )}
+
+          <Botao
+            titulo={progresso && progresso.total > 1 ? `Salvando ${progresso.atual}/${progresso.total}...` : modoEdicao ? 'Salvar alterações' : 'Salvar despesa'}
+            carregando={salvando}
+            marginTop={28}
+            onPress={handleSalvar}
+          />
+        </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  label: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-    marginTop: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    backgroundColor: '#fff',
-  },
-  picker: {
-    marginHorizontal: -4,
-    marginVertical: -2,
-  },
-  notaContainer: {
-    gap: 8,
-  },
-  notaPreview: {
-    width: '100%',
-    height: 180,
-    borderRadius: RADIUS.sm,
-    backgroundColor: '#eee',
-  },
-  notaBotoes: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  notaBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.sm,
-    paddingVertical: 10,
-  },
-  notaBtnTexto: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.verde,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  botao: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.sm,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  botaoTexto: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: 15,
-  },
-});

@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
-import { Picker } from '@react-native-picker/picker';
 import { Timestamp } from 'firebase/firestore';
 import { criarPlantio } from '../Services/plantios';
 import { listarTalhoes, Talhao } from '../Services/talhoes';
 import { TIPOS_PLANTIO, buscarTipoPlantio } from '../constants/plantios';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { Feather } from '@expo/vector-icons';
+import { Text, XStack, YStack } from 'tamagui';
+import { cores } from '../tamagui.config';
+import { Botao, Cabecalho, Cartao, Seletor, Tela } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type PlantioFormRouteProp = RouteProp<RootStackParamList, 'PlantioForm'>;
@@ -57,87 +57,76 @@ export default function PlantioForm() {
     }
   }
 
+  // Prévia da colheita, calculada a partir de hoje
+  const tipoAtual = buscarTipoPlantio(tipoSel);
+  const dataColheita = new Date();
+  if (tipoAtual) dataColheita.setDate(dataColheita.getDate() + tipoAtual.diasParaColheita);
+  const formatarData = (d: Date) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
   return (
-    <SafeAreaView style={styles.container}>
+    <Tela>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-          <View style={styles.headerRow}>
-            <BotaoVoltar />
-            <Text style={styles.titulo}>Novo Plantio</Text>
-          </View>
+          <Cabecalho titulo="Novo plantio" subtitulo="Registre o que foi plantado hoje" />
 
-          <Text style={styles.label}>Talhão</Text>
-          <View style={styles.input}>
-            <Picker selectedValue={talhaoSel ?? 'geral'} onValueChange={(v) => setTalhaoSel(v === 'geral' ? undefined : (v as string))} style={styles.picker}>
-              <Picker.Item label="Geral — propriedade toda" value="geral" />
-              {talhoes.map((t) => (
-                <Picker.Item key={t.id} label={t.nome} value={t.id} />
-              ))}
-            </Picker>
-          </View>
+          <Seletor
+            rotulo="O que foi plantado?"
+            valor={tipoSel}
+            aoMudar={setTipoSel}
+            opcoes={TIPOS_PLANTIO.map((t) => ({
+              label: `${t.nome} (~${t.diasParaColheita} dias até a colheita)`,
+              valor: t.chave,
+            }))}
+          />
 
-          <Text style={styles.label}>Tipo de plantio</Text>
-          <View style={styles.input}>
-            <Picker selectedValue={tipoSel} onValueChange={(v) => setTipoSel(v as string)} style={styles.picker}>
-              {TIPOS_PLANTIO.map((t) => (
-                <Picker.Item key={t.chave} label={`${t.nome} (~${t.diasParaColheita} dias até a colheita)`} value={t.chave} />
-              ))}
-            </Picker>
-          </View>
+          <Seletor
+            rotulo="Onde foi plantado?"
+            valor={talhaoSel ?? 'geral'}
+            aoMudar={(v) => setTalhaoSel(v === 'geral' ? undefined : v)}
+            ajuda={talhoes.length === 0 ? 'Esta propriedade ainda não tem talhões. O plantio vale para a área toda.' : undefined}
+            opcoes={[
+              { label: 'Propriedade toda', valor: 'geral' },
+              ...talhoes.map((t) => ({ label: `Talhão: ${t.nome}`, valor: t.id! })),
+            ]}
+          />
 
-          <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
-            {salvando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botaoTexto}>Salvar</Text>}
-          </TouchableOpacity>
+          {tipoAtual && (
+            <Cartao tom="bege" marginTop={20} gap={12}>
+              <XStack gap={12} alignItems="center">
+                <YStack width={40} height={40} borderRadius="full" backgroundColor="branco" alignItems="center" justifyContent="center">
+                  <Feather name="calendar" size={18} color={cores.verde} />
+                </YStack>
+                <YStack flex={1}>
+                  <Text fontSize={13} color="textoSec">
+                    Data do plantio
+                  </Text>
+                  <Text fontSize={15} fontWeight="600" color="texto">
+                    Hoje, {formatarData(new Date())}
+                  </Text>
+                </YStack>
+              </XStack>
+              <XStack gap={12} alignItems="center">
+                <YStack width={40} height={40} borderRadius="full" backgroundColor="verde" alignItems="center" justifyContent="center">
+                  <Feather name="sun" size={18} color={cores.sobreVerde} />
+                </YStack>
+                <YStack flex={1}>
+                  <Text fontSize={13} color="textoSec">
+                    Colheita prevista
+                  </Text>
+                  <Text fontSize={15} fontWeight="700" color="verde">
+                    {formatarData(dataColheita)}
+                  </Text>
+                </YStack>
+              </XStack>
+              <Text fontSize={13} color="textoSec">
+                Estimativa média para {tipoAtual.nome.toLowerCase()}. Pode variar com clima e manejo.
+              </Text>
+            </Cartao>
+          )}
+
+          <Botao titulo="Cadastrar plantio" carregando={salvando} marginTop={28} onPress={handleSalvar} />
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  label: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-    marginTop: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    backgroundColor: '#fff',
-  },
-  picker: {
-    marginHorizontal: -4,
-    marginVertical: -2,
-  },
-  botao: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.sm,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  botaoTexto: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: 15,
-  },
-});

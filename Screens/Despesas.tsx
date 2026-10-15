@@ -1,14 +1,10 @@
 import { useState, useCallback } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, FlatList, ActivityIndicator, Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, Alert } from 'react-native';
 import { useNavigation, useFocusEffect, NavigationProp } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { Cabecalho, Carregando, EstadoVazio, ItemLista, Tela } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type DespesasNavigationProp = NavigationProp<RootStackParamList, 'Despesas'>;
@@ -49,94 +45,36 @@ export default function Despesas() {
     setAtualizando(false);
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <BotaoVoltar />
-        <Text style={styles.titulo}>Despesas</Text>
-      </View>
 
-      <Text style={styles.subtitulo}>Escolha uma propriedade para ver as despesas</Text>
+  return (
+    <Tela>
+      <Cabecalho titulo="Despesas" subtitulo="Escolha uma propriedade para ver as despesas" />
 
       {carregando ? (
-        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
+        <Carregando />
       ) : propriedades.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.vazio}>Nenhuma propriedade cadastrada ainda.</Text>
-        </View>
+        <EstadoVazio
+          icone="map"
+          titulo="Cadastre uma propriedade primeiro"
+          texto="Os registros ficam organizados por propriedade. Depois de cadastrar, volte aqui."
+          acao={{ titulo: 'Cadastrar propriedade', onPress: () => navigation.navigate('PropriedadeForm') }}
+        />
       ) : (
         <FlatList
           data={propriedades}
           keyExtractor={(item) => item.id!}
+          showsVerticalScrollIndicator={false}
           refreshing={atualizando}
           onRefresh={handleAtualizar}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.item}
-              onPress={() =>
-                navigation.navigate('DespesasLista', { propriedadeId: item.id! })
-              }
-            >
-              <View>
-                <Text style={styles.itemNome}>{item.nome}</Text>
-                <Text style={styles.itemInfo}>
-                  {item.localizacao} · {item.areaTotal} ha
-                </Text>
-              </View>
-              <Feather name="chevron-right" size={20} color="#999" />
-            </TouchableOpacity>
+            <ItemLista
+              titulo={item.nome}
+              subtitulo={`${item.localizacao} · ${item.areaTotal} ha`}
+              onPress={() => navigation.navigate('DespesasLista', { propriedadeId: item.id! })}
+            />
           )}
         />
       )}
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  subtitulo: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 16,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  vazio: {
-    textAlign: 'center',
-    color: '#888',
-    fontSize: 14,
-  },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    marginBottom: 10,
-  },
-  itemNome: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  itemInfo: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-});

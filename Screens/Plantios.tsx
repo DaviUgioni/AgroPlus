@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, FlatList, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, Alert } from 'react-native';
 import { useNavigation, useFocusEffect, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { Text, XStack, YStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { listarPlantiosPorPropriedade, Plantio, estimativaColheita, textoEstimativa } from '../Services/plantios';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { cores } from '../tamagui.config';
+import { Cabecalho, Carregando, EstadoVazio, ItemLista, Tela } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type PlantiosNavigationProp = NavigationProp<RootStackParamList, 'Plantios'>;
@@ -60,24 +60,23 @@ export default function Plantios() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <BotaoVoltar />
-        <Text style={styles.titulo}>Plantios</Text>
-      </View>
-
-      <Text style={styles.subtitulo}>Escolha uma propriedade para ver os plantios</Text>
+    <Tela>
+      <Cabecalho titulo="Plantios" subtitulo="Escolha uma propriedade para ver os plantios" />
 
       {carregando ? (
-        <ActivityIndicator size="large" color={COLORS.verde} style={{ marginTop: 40 }} />
+        <Carregando />
       ) : propriedades.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.vazio}>Nenhuma propriedade cadastrada ainda.</Text>
-        </View>
+        <EstadoVazio
+          icone="map"
+          titulo="Cadastre uma propriedade primeiro"
+          texto="Os registros ficam organizados por propriedade. Depois de cadastrar, volte aqui."
+          acao={{ titulo: 'Cadastrar propriedade', onPress: () => navigation.navigate('PropriedadeForm') }}
+        />
       ) : (
         <FlatList
           data={propriedades}
           keyExtractor={(item) => item.id!}
+          showsVerticalScrollIndicator={false}
           refreshing={atualizando}
           onRefresh={handleAtualizar}
           renderItem={({ item }) => {
@@ -85,109 +84,43 @@ export default function Plantios() {
               ? estimativaColheita(item.plantioAtual.dataPlantio, item.plantioAtual.diasParaColheita)
               : null;
             return (
-              <TouchableOpacity
-                style={styles.item}
+              <ItemLista
+                titulo={item.nome}
+                subtitulo={`${item.localizacao} · ${item.areaTotal} ha`}
                 onPress={() =>
                   navigation.navigate('PlantiosLista', { propriedadeId: item.id!, propriedadeNome: item.nome })
                 }
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.itemNome}>{item.nome}</Text>
-                  <Text style={styles.itemInfo}>
-                    {item.localizacao} · {item.areaTotal} ha
+                {item.plantioAtual && estimativa ? (
+                  <XStack
+                    alignItems="center"
+                    gap={8}
+                    backgroundColor="verdeSuave"
+                    borderRadius="lg"
+                    paddingVertical={8}
+                    paddingHorizontal={10}
+                    marginTop={10}
+                  >
+                    <Feather name="feather" size={14} color={cores.verde} />
+                    <YStack flex={1}>
+                      <Text fontSize={13} fontWeight="600" color="texto">
+                        {item.plantioAtual.tipoNome}
+                      </Text>
+                      <Text fontSize={13} color="verde" marginTop={1}>
+                        {textoEstimativa(estimativa)}
+                      </Text>
+                    </YStack>
+                  </XStack>
+                ) : (
+                  <Text fontSize={13} color="textoTerc" fontStyle="italic" marginTop={8}>
+                    Nenhum plantio ativo
                   </Text>
-                  {item.plantioAtual && estimativa ? (
-                    <View style={styles.plantioCard}>
-                      <Feather name="feather" size={14} color={COLORS.verde} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.plantioNome}>{item.plantioAtual.tipoNome}</Text>
-                        <Text style={styles.plantioEstimativa}>{textoEstimativa(estimativa)}</Text>
-                      </View>
-                    </View>
-                  ) : (
-                    <Text style={styles.semPlantio}>Nenhum plantio ativo</Text>
-                  )}
-                </View>
-                <Feather name="chevron-right" size={20} color="#999" />
-              </TouchableOpacity>
+                )}
+              </ItemLista>
             );
           }}
         />
       )}
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  subtitulo: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 16,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  vazio: {
-    textAlign: 'center',
-    color: '#888',
-    fontSize: 14,
-  },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    marginBottom: 10,
-  },
-  itemNome: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  itemInfo: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  plantioCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#fff',
-    borderRadius: RADIUS.sm,
-    padding: 8,
-    marginTop: 8,
-  },
-  plantioNome: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.texto,
-  },
-  plantioEstimativa: {
-    fontSize: 11,
-    color: COLORS.verde,
-    marginTop: 1,
-  },
-  semPlantio: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
-    marginTop: 8,
-  },
-});

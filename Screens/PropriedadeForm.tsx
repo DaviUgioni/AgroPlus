@@ -1,16 +1,16 @@
 // Screens/PropriedadeForm.tsx
 import { useState, useEffect, useCallback } from 'react';
-import {View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp, NavigationProp, useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
+import { Text, XStack, YStack } from 'tamagui';
 import * as ImagePicker from 'expo-image-picker';
 import { auth } from '../FirebaseConfig';
 import { criarPropriedade, buscarPropriedade, atualizarPropriedade, type Propriedade } from '../Services/propriedades';
 import { enviarImagemPropriedade } from '../Services/imagens';
 import { RootStackParamList } from '../App';
-import { COLORS, RADIUS } from '../constants/theme';
-import BotaoVoltar from '../Components/BotaoVoltar';
+import { cores } from '../tamagui.config';
+import { Botao, Cabecalho, Campo, Rotulo, Tela, TelaCarregando } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type PropriedadeFormRouteProp = RouteProp<RootStackParamList, 'PropriedadeForm'>;
@@ -131,14 +131,22 @@ export default function PropriedadeForm() {
   };
 
   async function handleSalvar() {
-    if (!nome.trim() || !localizacao.trim() || !areaTotal.trim()) {
-      Alert.alert('Atenção', 'Preencha todos os campos.');
+    if (!nome.trim()) {
+      Alert.alert('Falta o nome', 'Dê um nome à propriedade, por exemplo "Sítio Boa Vista".');
+      return;
+    }
+    if (!localizacao.trim()) {
+      Alert.alert('Falta a localização', 'Digite a cidade ou toque em "Marcar no mapa".');
+      return;
+    }
+    if (!areaTotal.trim()) {
+      Alert.alert('Falta o tamanho', 'Informe o tamanho da propriedade em hectares.');
       return;
     }
 
     const area = Number(areaTotal.replace(',', '.'));
     if (isNaN(area) || area <= 0) {
-      Alert.alert('Atenção', 'Área total inválida.');
+      Alert.alert('Tamanho inválido', 'Digite só números, por exemplo 12,5.');
       return;
     }
 
@@ -182,238 +190,103 @@ export default function PropriedadeForm() {
   }
 
   if (carregando) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.verde} />
-      </SafeAreaView>
-    );
+    return <TelaCarregando />;
   }
 
+  const imagemAtual = imagemLocal || imagemUrl;
+
   return (
-    <SafeAreaView style={styles.container}>
+    <Tela>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.headerRow}>
-          <BotaoVoltar />
-          <Text style={styles.titulo}>{modoEdicao ? 'Editar propriedade' : 'Nova propriedade'}</Text>
-        </View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 32 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Cabecalho titulo={modoEdicao ? 'Editar propriedade' : 'Nova propriedade'} />
 
-        <Text style={styles.label}>Imagem</Text>
-        <View style={styles.imagemContainer}>
-          {(imagemLocal || imagemUrl) && (
-            <Image
-              source={{ uri: imagemLocal || imagemUrl }}
-              style={styles.imagemPreview}
-            />
-          )}
-          <View style={styles.imagemBotoes}>
-            <TouchableOpacity style={styles.imagemBotao} onPress={handleEscolherImagem}>
-              <Ionicons name="image-outline" size={20} color={COLORS.verde} />
-              <Text style={styles.imagemBotaoTexto}>
-                {imagemLocal || imagemUrl ? 'Trocar imagem' : 'Escolher imagem da galeria'}
-              </Text>
-            </TouchableOpacity>
-            {(imagemLocal || imagemUrl) && (
-              <TouchableOpacity
-                style={styles.imagemBotao}
-                onPress={handleRemoverImagem}
-              >
-                <Ionicons name="trash-outline" size={20} color="#c0392b" />
-                <Text style={[styles.imagemBotaoTexto, { color: '#c0392b' }]}>Remover</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+          <Campo
+            rotulo="Nome da propriedade"
+            value={nome}
+            onChangeText={setNome}
+            placeholder="Ex.: Sítio Boa Vista"
+            ajuda="Como você chama este lugar."
+          />
 
-        <Text style={styles.label}>Nome da propriedade</Text>
-        <TextInput
-          style={styles.input}
-          value={nome}
-          onChangeText={setNome}
-          placeholder="Sítio Boa Vista"
-        />
-
-        <Text style={styles.label}>Localização</Text>
-        <View style={styles.localizacaoContainer}>
-          <TextInput
-            style={[styles.input, styles.inputComBotao]}
+          <Campo
+            rotulo="Localização"
+            icone="map-pin"
             value={localizacao}
             onChangeText={setLocalizacao}
-            placeholder="Criciúma, SC"
+            placeholder="Ex.: Criciúma, SC"
             multiline
-            numberOfLines={3}
             textAlignVertical="top"
+            ajuda="Digite a cidade ou o endereço, ou marque o ponto exato no mapa."
           />
-          <TouchableOpacity style={styles.botaoMapa} onPress={handleAbrirMapa}>
-            <Ionicons name="map-outline" size={24} color={COLORS.verde} />
-          </TouchableOpacity>
-        </View>
-        {localizacao ? (
-          <View style={styles.localizacaoPreview}>
-            <Text style={styles.localizacaoPreviewTexto}>{localizacao}</Text>
-          </View>
-        ) : null}
-        {localizacao && (
-          <TouchableOpacity style={styles.botaoLimpar} onPress={handleLimparLocalizacao}>
-            <Text style={styles.botaoLimparTexto}>Remover localização</Text>
-          </TouchableOpacity>
-        )}
+          <XStack gap={8} marginTop={8} alignItems="center">
+            <Botao variante="secundario" tamanho="sm" icone="map" titulo="Marcar no mapa" onPress={handleAbrirMapa} />
+            {localizacao ? (
+              <Botao
+                variante="texto"
+                tamanho="sm"
+                icone="x"
+                titulo="Limpar"
+                cor={cores.erro}
+                onPress={handleLimparLocalizacao}
+              />
+            ) : null}
+          </XStack>
 
-        <Text style={styles.label}>Área total (ha)</Text>
-        <TextInput
-          style={styles.input}
-          value={areaTotal}
-          onChangeText={setAreaTotal}
-          placeholder="12.5"
-          keyboardType="numeric"
-        />
+          <Campo
+            rotulo="Tamanho total em hectares (ha)"
+            value={areaTotal}
+            onChangeText={setAreaTotal}
+            placeholder="Ex.: 12,5"
+            keyboardType="numeric"
+            ajuda="1 hectare = 10.000 m² (mais ou menos um campo de futebol)."
+          />
 
-        <TouchableOpacity style={styles.botao} onPress={handleSalvar} disabled={salvando}>
-          {salvando ? (
-            <ActivityIndicator color="#fff" />
+          <Rotulo>Foto (opcional)</Rotulo>
+          {imagemAtual ? (
+            <YStack gap={8}>
+              <Image source={{ uri: imagemAtual }} style={{ width: '100%', height: 170, borderRadius: 12 }} />
+              <XStack gap={8}>
+                <Botao flex={1} variante="contorno" tamanho="sm" icone="image" titulo="Trocar foto" onPress={handleEscolherImagem} />
+                <Botao flex={1} variante="perigo" tamanho="sm" icone="trash-2" titulo="Remover" onPress={handleRemoverImagem} />
+              </XStack>
+            </YStack>
           ) : (
-            <Text style={styles.botaoTexto}>Salvar</Text>
+            <YStack
+              height={100}
+              borderRadius="xl"
+              borderWidth={1.5}
+              borderStyle="dashed"
+              borderColor="bordaForte"
+              backgroundColor="branco press:verdeSuave"
+              alignItems="center"
+              justifyContent="center"
+              gap={6}
+              onPress={handleEscolherImagem}
+              accessibilityRole="button"
+            >
+              <Feather name="image" size={24} color={cores.verde} />
+              <Text fontSize={15} fontWeight="600" color="verde">
+                Escolher foto da galeria
+              </Text>
+              <Text fontSize={13} color="textoSec">
+                Ajuda a reconhecer a propriedade na lista
+              </Text>
+            </YStack>
           )}
-        </TouchableOpacity>
-      </ScrollView>
+
+          <Botao
+            titulo={modoEdicao ? 'Salvar alterações' : 'Cadastrar propriedade'}
+            carregando={salvando}
+            marginTop={28}
+            onPress={handleSalvar}
+          />
+        </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-  },
-  scrollContent: {
-    paddingBottom: 32,
-    paddingTop: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  label: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-    marginTop: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 15,
-    backgroundColor: '#fff',
-  },
-  inputComBotao: {
-    flex: 1,
-    borderTopRightRadius: 0,
-    borderBottomRightRadius: 0,
-    minHeight: 52,
-    paddingRight: 10,
-    textAlignVertical: 'top',
-  },
-  localizacaoContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  botaoMapa: {
-    width: 52,
-    minHeight: 52,
-    alignSelf: 'stretch',
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    borderLeftWidth: 0,
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  localizacaoPreview: {
-    marginTop: 8,
-    backgroundColor: COLORS.bege,
-    borderRadius: RADIUS.sm,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#e8e0d0',
-  },
-  localizacaoPreviewTexto: {
-    fontSize: 13,
-    color: '#333',
-    lineHeight: 18,
-  },
-  imagemContainer: {
-    gap: 8,
-  },
-  imagemPreview: {
-    width: '100%',
-    height: 160,
-    borderRadius: RADIUS.sm,
-    backgroundColor: '#eee',
-  },
-  imagemBotoes: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  imagemBotao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.borda,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    flex: 1,
-  },
-  imagemBotaoTexto: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.verde,
-  },
-  botaoLimpar: {
-    marginTop: 8,
-    padding: 8,
-    alignSelf: 'flex-start',
-  },
-  botaoLimparTexto: {
-    color: '#E74C3C',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  botao: {
-    backgroundColor: COLORS.verde,
-    borderRadius: RADIUS.sm,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  botaoTexto: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: 15,
-  },
-});
