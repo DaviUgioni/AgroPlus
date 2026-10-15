@@ -84,8 +84,14 @@ export async function listarDespesasPorPropriedade(propriedadeId: string): Promi
   }
 }
 
-export async function listarDespesasPorTalhao(talhaoId: string): Promise<Despesa[]> {
-  const q = query(despesasCollection, where('talhaoId', '==', talhaoId));
+// O filtro por propriedadeId é exigido pelas regras do Firestore (firestore.rules):
+// elas só liberam a consulta se provarem que as despesas pertencem à propriedade do usuário.
+export async function listarDespesasPorTalhao(talhaoId: string, propriedadeId: string): Promise<Despesa[]> {
+  const q = query(
+    despesasCollection,
+    where('propriedadeId', '==', propriedadeId),
+    where('talhaoId', '==', talhaoId),
+  );
   const snapshot = await getDocs(q);
   const lista = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Despesa));
   return lista.sort((a, b) => (b.data?.toMillis?.() ?? 0) - (a.data?.toMillis?.() ?? 0));

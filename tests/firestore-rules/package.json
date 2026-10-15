@@ -1,0 +1,14 @@
+{
+  "name": "agroplus-firestore-rules-tests",
+  "private": true,
+  "type": "module",
+  "description": "Testes das regras de segurança do Firestore (firestore.rules) usando o emulador",
+  "scripts": {
+    "test": "firebase emulators:exec --config ../../firebase.json --only firestore --project demo-agroplus \"node --test\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.0.0",
+    "firebase-tools": "^15.0.0"
+  }
+}

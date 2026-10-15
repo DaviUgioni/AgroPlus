@@ -59,7 +59,7 @@ export default function DespesasLista() {
     }
     try {
       if (!opts?.silent) setCarregando(true);
-      const dados = modoTalhao ? await listarDespesasPorTalhao(talhaoId) : await listarDespesasPorPropriedade(propriedadeId);
+      const dados = modoTalhao ? await listarDespesasPorTalhao(talhaoId, propriedadeId) : await listarDespesasPorPropriedade(propriedadeId);
       const prop = await buscarPropriedade(propriedadeId);
       setDespesas(dados);
       if (!modoTalhao && prop?.limiteMensal) {
