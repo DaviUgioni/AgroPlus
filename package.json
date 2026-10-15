@@ -1,6 +1,12 @@
 {
   "name": "agroplus",
   "version": "1.0.0",
+  "license": "MIT",
+  "author": "Davi Ugioni Marcolino",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DaviUgioni/AgroPlus.git"
+  },
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
