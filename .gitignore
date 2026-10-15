@@ -60,3 +60,6 @@ dist_test/
 /ios
 /android
 .claude/
+
+# emulador do Firebase
+*-debug.log
