@@ -59,7 +59,6 @@ dist_test/
 # generated native folders
 /ios
 /android
-.claude/
 
 # emulador do Firebase
 *-debug.log
