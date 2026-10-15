@@ -39,7 +39,7 @@ export default function PropriedadeDetalhe() {
         const totais = await Promise.all(
           listaTalhoes.map(async (t) => {
             try {
-              const desps = await listarDespesasPorTalhao(t.id!);
+              const desps = await listarDespesasPorTalhao(t.id!, propriedadeId);
               return [t.id!, totalDespesas(desps)] as const;
             } catch {
               return [t.id!, 0] as const;
