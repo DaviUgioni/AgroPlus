@@ -2,37 +2,68 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Propriedades: só dono pode ler/escrever
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // true se o usuário logado é dono da propriedade informada
+    function ownsProperty(propriedadeId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/propriedades/$(propriedadeId)).data.userId == request.auth.uid;
+    }
+
+    // Propriedades: só o dono lê, altera e apaga.
+    // Regras separadas por operação: um "write" genérico também liberaria
+    // create com userId de outra pessoa.
     match /propriedades/{propriedadeId} {
-      allow read, write: if request.auth != null
+      // resource == null permite getDoc de documento inexistente (retorna "não existe")
+      allow read: if signedIn()
         && (resource == null || resource.data.userId == request.auth.uid);
-      // create: garante que userId == auth.uid
-      allow create: if request.auth != null
+
+      // só cria propriedade em nome do próprio usuário
+      allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid;
+
+      // o userId não pode ser trocado (não dá pra "doar" a propriedade)
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
     }
 
-    // Talhoes: só dono da propriedade pai
+    // Talhões: só o dono da propriedade pai.
+    // No update, a propriedade de destino também precisa ser do usuário.
     match /talhoes/{talhaoId} {
-      allow read, write: if request.auth != null
-        && get(/databases/$(database)/documents/propriedades/$(resource.data.propriedadeId)).data.userId == request.auth.uid;
-      allow create: if request.auth != null
-        && get(/databases/$(database)/documents/propriedades/$(request.resource.data.propriedadeId)).data.userId == request.auth.uid;
+      allow read: if signedIn()
+        && (resource == null || ownsProperty(resource.data.propriedadeId));
+      allow create: if ownsProperty(request.resource.data.propriedadeId);
+      allow update: if ownsProperty(resource.data.propriedadeId)
+        && ownsProperty(request.resource.data.propriedadeId);
+      allow delete: if ownsProperty(resource.data.propriedadeId);
     }
 
-    // Despesas: só dono da propriedade pai
+    // Despesas: só o dono da propriedade pai
     match /despesas/{despesaId} {
-      allow read, write: if request.auth != null
-        && get(/databases/$(database)/documents/propriedades/$(resource.data.propriedadeId)).data.userId == request.auth.uid;
-      allow create: if request.auth != null
-        && get(/databases/$(database)/documents/propriedades/$(request.resource.data.propriedadeId)).data.userId == request.auth.uid;
+      allow read: if signedIn()
+        && (resource == null || ownsProperty(resource.data.propriedadeId));
+      allow create: if ownsProperty(request.resource.data.propriedadeId);
+      allow update: if ownsProperty(resource.data.propriedadeId)
+        && ownsProperty(request.resource.data.propriedadeId);
+      allow delete: if ownsProperty(resource.data.propriedadeId);
     }
 
-    // Plantios: só dono da propriedade pai
+    // Plantios: só o dono da propriedade pai
     match /plantios/{plantioId} {
-      allow read, write: if request.auth != null
-        && get(/databases/$(database)/documents/propriedades/$(resource.data.propriedadeId)).data.userId == request.auth.uid;
-      allow create: if request.auth != null
-        && get(/databases/$(database)/documents/propriedades/$(request.resource.data.propriedadeId)).data.userId == request.auth.uid;
+      allow read: if signedIn()
+        && (resource == null || ownsProperty(resource.data.propriedadeId));
+      allow create: if ownsProperty(request.resource.data.propriedadeId);
+      allow update: if ownsProperty(resource.data.propriedadeId)
+        && ownsProperty(request.resource.data.propriedadeId);
+      allow delete: if ownsProperty(resource.data.propriedadeId);
     }
+
+    // Todo o resto é negado por padrão.
   }
 }
