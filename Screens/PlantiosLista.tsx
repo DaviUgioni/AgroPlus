@@ -7,16 +7,17 @@ import { Text, XStack, YStack } from 'tamagui';
 import { listarPlantiosPorPropriedade, excluirPlantio, estimativaColheita, textoEstimativa, Plantio } from '../Services/plantios';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { BarraProgresso, BotaoFlutuante, Cabecalho, Carregando, EstadoVazio, ItemLista, Tela } from '../Components/ui';
+import { BarraProgresso, BotaoFlutuante, Cabecalho, EstadoVazio, ItemLista, ListaEsqueleto, Tela, confirmar, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type PlantiosListaRouteProp = RouteProp<RootStackParamList, 'PlantiosLista'>;
 type NavProp = NavigationProp<RootStackParamList>;
 
-export default function PlantiosLista() {
+/** `embutido`: usado dentro da aba Plantios, sem cabeçalho nem moldura de tela */
+export default function PlantiosLista({ embutido, propriedadeId: idEmbutido }: { embutido?: boolean; propriedadeId?: string }) {
   const route = useRoute<PlantiosListaRouteProp>();
   const navigation = useNavigation<NavProp>();
-  const { propriedadeId, propriedadeNome } = route.params;
+  const { propriedadeId, propriedadeNome } = { ...(route.params ?? {}), ...(idEmbutido ? { propriedadeId: idEmbutido } : {}) } as { propriedadeId: string; propriedadeNome?: string };
   const insets = useSafeAreaInsets();
 
   const [plantios, setPlantios] = useState<Plantio[]>([]);
@@ -29,7 +30,7 @@ export default function PlantiosLista() {
       const dados = await listarPlantiosPorPropriedade(propriedadeId);
       setPlantios(dados);
     } catch (error) {
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar os plantios.'));
+      toast.erro(mensagemErro(error, 'Não foi possível carregar os plantios.'));
     } finally {
       if (!opts?.silent) setCarregando(false);
     }
@@ -48,29 +49,26 @@ export default function PlantiosLista() {
   }
 
   function handleExcluir(id: string) {
-    Alert.alert('Excluir plantio', 'Tem certeza que deseja excluir?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir',
-        style: 'destructive',
-        onPress: async () => {
+    confirmar({ titulo: 'Excluir plantio', texto: 'Tem certeza que deseja excluir?', confirmar: 'Excluir' }).then(async (ok) => {
+      if (!ok) return;
           try {
             await excluirPlantio(id);
             carregarPlantios();
           } catch (error) {
-            Alert.alert('Erro', mensagemErro(error, 'Não foi possível excluir.'));
+            toast.erro(mensagemErro(error, 'Não foi possível excluir.'));
           }
-        },
-      },
-    ]);
+    });
   }
 
+  const Raiz: any = embutido ? YStack : Tela;
+  const propsRaiz = embutido ? { flex: 1 } : { edges: ['top', 'left', 'right'] };
+
   return (
-    <Tela edges={['top', 'left', 'right']}>
-      <Cabecalho titulo="Plantios" subtitulo={propriedadeNome} />
+    <Raiz {...propsRaiz}>
+      {embutido ? null : <Cabecalho titulo="Plantios" subtitulo={propriedadeNome} />}
 
       {carregando ? (
-        <Carregando />
+        <ListaEsqueleto quantidade={3} />
       ) : plantios.length === 0 ? (
         <EstadoVazio
           icone="feather"
@@ -82,7 +80,7 @@ export default function PlantiosLista() {
         <FlatList
           data={plantios}
           keyExtractor={(item) => item.id!}
-          contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+          contentContainerStyle={{ paddingBottom: embutido ? 96 : 100 + insets.bottom }}
           showsVerticalScrollIndicator={false}
           refreshing={atualizando}
           onRefresh={handleAtualizar}
@@ -92,6 +90,7 @@ export default function PlantiosLista() {
             const progresso = 1 - estimativa.diasRestantes / (item.diasParaColheita || 1);
             return (
               <ItemLista
+                icone="feather"
                 titulo={item.tipoNome}
                 subtitulo={`${item.talhaoNome ? `Talhão: ${item.talhaoNome}` : 'Propriedade toda'} · Plantado em ${item.dataPlantio.toDate().toLocaleDateString('pt-BR')}`}
                 direita={
@@ -123,8 +122,8 @@ export default function PlantiosLista() {
       )}
 
       {plantios.length > 0 && (
-        <BotaoFlutuante icone="plus" titulo="Novo plantio" onPress={() => navigation.navigate('PlantioForm', { propriedadeId })} />
+        <BotaoFlutuante naAba={embutido} icone="plus" titulo="Novo plantio" onPress={() => navigation.navigate('PlantioForm', { propriedadeId })} />
       )}
-    </Tela>
+    </Raiz>
   );
 }

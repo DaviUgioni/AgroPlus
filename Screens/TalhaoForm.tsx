@@ -6,7 +6,7 @@ import { buscarPropriedade } from '../Services/propriedades';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
-import { Botao, Cabecalho, Campo, Dica, Tela, TelaCarregando } from '../Components/ui';
+import { Botao, Cabecalho, Campo, Dica, Tela, TelaCarregando, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type TalhaoFormRouteProp = RouteProp<RootStackParamList, 'TalhaoForm'>;
@@ -20,6 +20,7 @@ export default function TalhaoForm() {
 
   const [nome, setNome] = useState('');
   const [area, setArea] = useState('');
+  const [erros, setErros] = useState<{ nome?: string; area?: string }>({});
   const [areaTalhaoEdicao, setAreaTalhaoEdicao] = useState(0);
   const [carregando, setCarregando] = useState(modoEdicao);
   const [salvando, setSalvando] = useState(false);
@@ -46,28 +47,24 @@ export default function TalhaoForm() {
         setArea(String(talhao.area));
         setAreaTalhaoEdicao(talhao.area);
       } else {
-        Alert.alert('Erro', 'Talhão não encontrado.');
+        toast.erro('Talhão não encontrado.');
       }
     } catch (error) {
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar o talhão.'));
+      toast.erro(mensagemErro(error, 'Não foi possível carregar o talhão.'));
     } finally {
       setCarregando(false);
     }
   }
 
   async function handleSalvar() {
-    if (!nome.trim()) {
-      Alert.alert('Falta o nome', 'Dê um nome ao talhão, por exemplo "Área do milho".');
-      return;
-    }
-    if (!area.trim()) {
-      Alert.alert('Falta a área', 'Informe o tamanho do talhão em hectares.');
-      return;
-    }
-
     const areaNumero = Number(area.replace(',', '.'));
-    if (isNaN(areaNumero) || areaNumero <= 0) {
-      Alert.alert('Atenção', 'Área inválida.');
+    const novosErros: typeof erros = {};
+    if (!nome.trim()) novosErros.nome = 'Dê um nome ao talhão, por exemplo "Área do milho".';
+    if (!area.trim()) novosErros.area = 'Informe o tamanho em hectares.';
+    else if (isNaN(areaNumero) || areaNumero <= 0) novosErros.area = 'Digite um número maior que zero, ex.: 2,5';
+    setErros(novosErros);
+    if (Object.keys(novosErros).length > 0) {
+      toast.erro('Confira os campos em vermelho.');
       return;
     }
 
@@ -80,7 +77,7 @@ export default function TalhaoForm() {
       ]);
 
       if (!propriedade) {
-        Alert.alert('Erro', 'Propriedade não encontrada.');
+        toast.erro('Propriedade não encontrada.');
         return;
       }
 
@@ -101,10 +98,10 @@ export default function TalhaoForm() {
       } else {
         await criarTalhao({ nome, area: areaNumero, propriedadeId });
       }
-      Alert.alert('Sucesso', modoEdicao ? 'Talhão atualizado!' : 'Talhão cadastrado!');
+      toast.sucesso(modoEdicao ? 'Talhão atualizado!' : 'Talhão cadastrado!');
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível salvar. Tente novamente.'));
+      toast.erro(mensagemErro(error, 'Não foi possível salvar. Tente novamente.'));
     } finally {
       setSalvando(false);
     }
@@ -137,7 +134,11 @@ export default function TalhaoForm() {
           <Campo
             rotulo="Nome do talhão"
             value={nome}
-            onChangeText={setNome}
+            onChangeText={(v) => {
+              setNome(v);
+              setErros((e) => ({ ...e, nome: undefined }));
+            }}
+            erro={erros.nome}
             placeholder="Ex.: Área do milho"
             ajuda="Use um nome fácil de reconhecer no dia a dia."
           />
@@ -145,10 +146,14 @@ export default function TalhaoForm() {
           <Campo
             rotulo="Área em hectares (ha)"
             value={area}
-            onChangeText={setArea}
+            onChangeText={(v) => {
+              setArea(v);
+              setErros((e) => ({ ...e, area: undefined }));
+            }}
+            sufixo="ha"
             placeholder="Ex.: 2,5"
             keyboardType="numeric"
-            erro={erroArea}
+            erro={erros.area ?? erroArea}
             ajuda={
               disponivel !== null && areaInfo
                 ? `Disponível: ${formatarHa(disponivel)} ha de ${formatarHa(areaInfo.total)} ha da propriedade.`

@@ -9,56 +9,32 @@ import { listarTalhoes, excluirTalhao, Talhao } from '../Services/talhoes';
 import { listarDespesasPorTalhao, totalDespesas } from '../Services/despesas';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { BarraProgresso, Botao, Cabecalho, Cartao, EstadoVazio, Tela, TelaCarregando, TituloSecao } from '../Components/ui';
+import { BarraProgresso, Botao, Cabecalho, Cartao, EstadoVazio, IconeLista, MenuAcoes, Tela, TelaCarregando, TituloSecao, confirmar, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type DetalheRouteProp = RouteProp<RootStackParamList, 'PropriedadeDetalhe'>;
 type DetalheNavigationProp = NavigationProp<RootStackParamList, 'PropriedadeDetalhe'>;
 type IconeFeather = ComponentProps<typeof Feather>['name'];
 
-// Botão pequeno de ícone + legenda usado nas ações de cada talhão
-function AcaoTalhao({ icone, label, cor = cores.verde, onPress }: { icone: IconeFeather; label: string; cor?: string; onPress: () => void }) {
+// Ação principal de cada talhão (as secundárias ficam no menu "⋯")
+function AcaoTalhao({ icone, label, onPress }: { icone: IconeFeather; label: string; onPress: () => void }) {
   return (
-    <YStack
+    <XStack
       flex={1}
       alignItems="center"
-      gap={4}
-      minHeight={56}
       justifyContent="center"
-      paddingVertical={8}
-      borderRadius="lg"
+      gap={8}
+      minHeight={50}
       backgroundColor="transparent press:begeClaro"
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Feather name={icone} size={19} color={cor} />
-      <Text fontSize={13} fontWeight="600" color={cor} textAlign="center">
+      <Feather name={icone} size={18} color={cores.verde} />
+      <Text fontSize={14} fontWeight="700" color="verde" textAlign="center">
         {label}
       </Text>
-    </YStack>
-  );
-}
-
-// Botão redondo só com ícone (editar/excluir no cabeçalho)
-function BotaoIcone({ icone, cor, label, onPress }: { icone: IconeFeather; cor: string; label: string; onPress: () => void }) {
-  return (
-    <YStack
-      width={44}
-      height={44}
-      borderRadius="full"
-      borderWidth={1}
-      borderColor="borda"
-      backgroundColor="branco press:begeClaro"
-      alignItems="center"
-      justifyContent="center"
-      onPress={onPress}
-      hitSlop={6}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-    >
-      <Feather name={icone} size={18} color={cor} />
-    </YStack>
+    </XStack>
   );
 }
 
@@ -102,7 +78,7 @@ export default function PropriedadeDetalhe() {
       }
     } catch (error) {
       console.log('Erro ao carregar detalhe:', error);
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar os dados.'));
+      toast.erro(mensagemErro(error, 'Não foi possível carregar os dados.'));
     } finally {
       setCarregando(false);
     }
@@ -115,39 +91,27 @@ export default function PropriedadeDetalhe() {
   );
 
   function handleExcluirPropriedade() {
-    Alert.alert('Excluir propriedade', 'Tem certeza? Os talhões, plantios e despesas desta propriedade também serão apagados. Não dá para desfazer.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir',
-        style: 'destructive',
-        onPress: async () => {
+    confirmar({ titulo: 'Excluir propriedade', texto: 'Tem certeza? Os talhões, plantios e despesas desta propriedade também serão apagados. Não dá para desfazer.', confirmar: 'Excluir' }).then(async (ok) => {
+      if (!ok) return;
           try {
             await excluirPropriedade(propriedadeId);
             navigation.goBack();
           } catch (error) {
-            Alert.alert('Erro', mensagemErro(error, 'Não foi possível excluir.'));
+            toast.erro(mensagemErro(error, 'Não foi possível excluir.'));
           }
-        },
-      },
-    ]);
+    });
   }
 
   function handleExcluirTalhao(talhaoId: string) {
-    Alert.alert('Excluir talhão', 'Tem certeza?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir',
-        style: 'destructive',
-        onPress: async () => {
+    confirmar({ titulo: 'Excluir talhão', texto: 'Tem certeza?', confirmar: 'Excluir' }).then(async (ok) => {
+      if (!ok) return;
           try {
             await excluirTalhao(talhaoId);
             carregarDados();
           } catch (error) {
-            Alert.alert('Erro', mensagemErro(error, 'Não foi possível excluir o talhão.'));
+            toast.erro(mensagemErro(error, 'Não foi possível excluir o talhão.'));
           }
-        },
-      },
-    ]);
+    });
   }
 
   if (carregando) {
@@ -179,15 +143,14 @@ export default function PropriedadeDetalhe() {
               titulo={propriedade.nome}
               subtitulo={`${propriedade.localizacao} · ${propriedade.areaTotal} ha`}
               direita={
-                <XStack gap={8}>
-                  <BotaoIcone
-                    icone="edit-2"
-                    cor={cores.textoSec}
-                    label="Editar propriedade"
-                    onPress={() => navigation.navigate('PropriedadeForm', { propriedadeId })}
-                  />
-                  <BotaoIcone icone="trash-2" cor={cores.erro} label="Excluir propriedade" onPress={handleExcluirPropriedade} />
-                </XStack>
+                <MenuAcoes
+                  titulo={propriedade.nome}
+                  rotulo="Opções da propriedade"
+                  acoes={[
+                    { titulo: 'Editar propriedade', icone: 'edit-2', onPress: () => navigation.navigate('PropriedadeForm', { propriedadeId }) },
+                    { titulo: 'Excluir propriedade', icone: 'trash-2', perigo: true, onPress: handleExcluirPropriedade },
+                  ]}
+                />
               }
             />
 
@@ -236,42 +199,37 @@ export default function PropriedadeDetalhe() {
         }
         renderItem={({ item }) => (
           <Cartao marginBottom={10} padding={0} overflow="hidden">
-            <XStack alignItems="center" justifyContent="space-between" padding={14}>
+            <XStack alignItems="center" justifyContent="space-between" paddingVertical={10} paddingLeft={14} paddingRight={4} gap={12}>
+              <IconeLista icone="grid" />
               <YStack flex={1}>
-                <Text fontSize={15} fontWeight="600" color="texto">
+                <Text fontSize={16} fontWeight="700" color="texto">
                   {item.nome}
                 </Text>
                 <Text fontSize={13} color="textoSec" marginTop={2}>
-                  {item.area} ha
+                  {item.area} ha · gasto {formatarMoeda(totaisPorTalhao[item.id!] ?? 0)}
                 </Text>
               </YStack>
-              <YStack alignItems="flex-end">
-                <Text fontSize={13} color="textoSec">
-                  Total gasto
-                </Text>
-                <Text fontSize={14} fontWeight="700" color="verde">
-                  {formatarMoeda(totaisPorTalhao[item.id!] ?? 0)}
-                </Text>
-              </YStack>
+              <MenuAcoes
+                titulo={item.nome}
+                rotulo={`Opções do talhão ${item.nome}`}
+                acoes={[
+                  { titulo: 'Editar talhão', icone: 'edit-2', onPress: () => navigation.navigate('TalhaoForm', { propriedadeId, talhaoId: item.id }) },
+                  { titulo: 'Excluir talhão', icone: 'trash-2', perigo: true, onPress: () => handleExcluirTalhao(item.id!) },
+                ]}
+              />
             </XStack>
-            <XStack borderTopWidth={1} borderTopColor="borda" paddingHorizontal={6}>
+            <XStack borderTopWidth={1} borderTopColor="borda">
               <AcaoTalhao
                 icone="list"
                 label="Despesas"
                 onPress={() => navigation.navigate('DespesasLista', { propriedadeId, talhaoId: item.id, talhaoNome: item.nome })}
               />
+              <YStack width={1} backgroundColor="borda" />
               <AcaoTalhao
                 icone="plus-circle"
                 label="Nova despesa"
                 onPress={() => navigation.navigate('DespesaForm', { propriedadeId, talhaoId: item.id })}
               />
-              <AcaoTalhao
-                icone="edit-2"
-                label="Editar"
-                cor={cores.textoSec}
-                onPress={() => navigation.navigate('TalhaoForm', { propriedadeId, talhaoId: item.id })}
-              />
-              <AcaoTalhao icone="trash-2" label="Excluir" cor={cores.erro} onPress={() => handleExcluirTalhao(item.id!)} />
             </XStack>
           </Cartao>
         )}

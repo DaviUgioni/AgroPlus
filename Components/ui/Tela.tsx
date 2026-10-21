@@ -15,7 +15,14 @@ export default function Tela({ edges, fundo = 'claro', children, ...props }: Tel
   const backgroundColor = fundo === 'branco' ? cores.branco : cores.begeClaro;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor }} edges={edges}>
-      <YStack flex={1} paddingHorizontal={20} {...props}>
+      <YStack
+        flex={1}
+        paddingHorizontal={20}
+        animation="medium"
+        opacity="enter:0"
+        y="enter:8"
+        {...props}
+      >
         {children}
       </YStack>
     </SafeAreaView>

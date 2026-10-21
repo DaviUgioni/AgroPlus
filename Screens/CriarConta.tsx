@@ -8,21 +8,23 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Text, XStack, YStack } from 'tamagui';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import BotaoVoltar from '../Components/BotaoVoltar';
-import { Botao, Campo, Subtitulo, Titulo } from '../Components/ui';
+import FaixaMarca from '../Components/FaixaMarca';
+import { Botao, Campo, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type CriarContaNavigationProp = NavigationProp<RootStackParamList, 'CriarConta'>;
 
 export default function CriarConta() {
   const navigation = useNavigation<CriarContaNavigationProp>();
+  const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -51,32 +53,32 @@ export default function CriarConta() {
     setEmailErro('');
 
     if (!emailNorm || !senha || !confirmacaoSenha) {
-      Alert.alert('Atenção', 'Por favor, preencha todos os campos.');
+      toast.erro('Por favor, preencha todos os campos.');
       if (!isEmailValido(emailNorm)) setEmailErro('E-mail inválido.');
       return;
     }
 
     if (!isEmailValido(emailNorm)) {
       setEmailErro('E-mail inválido.');
-      Alert.alert('Atenção', 'Digite um e-mail válido.');
+      toast.erro('Digite um e-mail válido.');
       return;
     }
 
     if (senha !== confirmacaoSenha) {
-      Alert.alert('Atenção', 'As senhas não coincidem.');
+      toast.erro('As senhas não coincidem.');
       return;
     }
 
     if (senha.length < 6) {
-      Alert.alert('Atenção', 'A senha deve ter pelo menos 6 caracteres.');
+      toast.erro('A senha deve ter pelo menos 6 caracteres.');
       return;
     }
 
     try {
       setSalvando(true);
       await createUserWithEmailAndPassword(auth, emailNorm, senha);
-      Alert.alert('Sucesso', 'Conta criada com sucesso!');
-      navigation.navigate('Home');
+      toast.sucesso('Conta criada com sucesso!');
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (error: any) {
       let mensagem = mensagemErro(error, 'Ocorreu um erro ao criar a conta.');
       if (error.code === 'auth/email-already-in-use') {
@@ -88,7 +90,7 @@ export default function CriarConta() {
       } else if (error.code === 'auth/weak-password') {
         mensagem = 'Senha muito fraca.';
       }
-      Alert.alert('Erro', mensagem);
+      toast.erro(mensagem);
     } finally {
       setSalvando(false);
     }
@@ -97,23 +99,15 @@ export default function CriarConta() {
   const forca = forcaSenha(senha);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: cores.branco }}>
-      <XStack paddingHorizontal={20} marginTop={8}>
-        <BotaoVoltar />
-      </XStack>
+    <YStack flex={1} backgroundColor="branco">
+      <StatusBar style="light" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <YStack flex={1} justifyContent="center" padding={24}>
-              <Titulo fontSize={26}>Criar conta</Titulo>
-              <Subtitulo marginTop={4} marginBottom={12}>
-                Cadastre-se para começar a gerenciar suas propriedades
-              </Subtitulo>
+            <YStack flex={1}>
+              <FaixaMarca compacta voltar titulo="Criar conta" subtitulo="Cadastre-se para gerenciar suas propriedades" />
 
+              <YStack padding={24} paddingBottom={insets.bottom + 24} flex={1} justifyContent="center">
               <Campo
                 rotulo="E-mail"
                 icone="mail"
@@ -194,10 +188,11 @@ export default function CriarConta() {
                   Fazer login
                 </Text>
               </Text>
+              </YStack>
             </YStack>
           </TouchableWithoutFeedback>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </YStack>
   );
 }

@@ -1,7 +1,7 @@
 // Components/ui/Campo.tsx
 import { ReactNode, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
-import { Input, InputProps, XStack, YStack, styled } from 'tamagui';
+import { Input, InputProps, Text, XStack, YStack, styled } from 'tamagui';
 import { cores } from '../../tamagui.config';
 import { IconeFeather } from './Botao';
 import { Rotulo, TextoAjuda, TextoErro } from './Textos';
@@ -14,15 +14,17 @@ export const CaixaCampo = styled(XStack, {
   borderColor: 'borda',
   borderRadius: 'lg',
   paddingHorizontal: 14,
-  minHeight: 50,
+  minHeight: 52,
   gap: 10,
+  animation: 'quick',
 
   variants: {
+    // Anel suave em volta do campo ativo: destaca o foco sem mudar o tamanho da caixa
     focado: {
-      true: { borderColor: 'verde' },
+      true: { borderColor: 'verde', boxShadow: '0 0 0 3px rgba(21, 133, 64, 0.18)' },
     },
     comErro: {
-      true: { borderColor: 'erro' },
+      true: { borderColor: 'erro', backgroundColor: 'erroSuave', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.15)' },
     },
   } as const,
 });
@@ -33,6 +35,10 @@ type CampoProps = InputProps & {
   /** Explicação curta abaixo do campo (some quando há erro) */
   ajuda?: string;
   icone?: IconeFeather;
+  /** Texto fixo antes do valor digitado (ex.: "R$") */
+  prefixo?: string;
+  /** Texto fixo depois do valor digitado (ex.: "ha") */
+  sufixo?: string;
   /** Mostra o botão de olho para exibir/ocultar a senha */
   senha?: boolean;
   /** Conteúdo extra à direita do campo (ex.: um botão) */
@@ -44,6 +50,8 @@ export default function Campo({
   erro,
   ajuda,
   icone,
+  prefixo,
+  sufixo,
   senha,
   direita,
   secureTextEntry,
@@ -67,6 +75,11 @@ export default function Campo({
             style={multiline ? { marginTop: 15 } : undefined}
           />
         ) : null}
+        {prefixo ? (
+          <Text fontSize={16} fontWeight="700" color={focado ? 'verde' : 'textoSec'} marginTop={multiline ? 14 : 0}>
+            {prefixo}
+          </Text>
+        ) : null}
         {/* A borda e o fundo ficam na CaixaCampo, então o Input vem "limpo" */}
         <Input
           flex={1}
@@ -75,7 +88,7 @@ export default function Campo({
           backgroundColor="transparent"
           paddingHorizontal={0}
           paddingVertical={13}
-          fontSize={15}
+          fontSize={16}
           color="texto"
           placeholderTextColor="textoTerc"
           selectionColor="verde"
@@ -91,6 +104,11 @@ export default function Campo({
           }}
           {...props}
         />
+        {sufixo ? (
+          <Text fontSize={15} fontWeight="700" color="textoSec">
+            {sufixo}
+          </Text>
+        ) : null}
         {senha ? (
           <YStack
             padding={4}

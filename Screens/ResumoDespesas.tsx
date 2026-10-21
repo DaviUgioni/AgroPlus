@@ -9,7 +9,7 @@ import { listarPropriedades } from '../Services/propriedades';
 import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, CategoriaDespesa, LABELS_CATEGORIA } from '../Services/despesas';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Cabecalho, Carregando, Cartao, Chip, EstadoVazio, ItemLista, Tela, TituloSecao } from '../Components/ui';
+import { Cabecalho, Cartao, Chip, EstadoVazio, GraficoBarras, ItemLista, ListaEsqueleto, Tela, TituloSecao, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type ResumoDespesasRouteProp = RouteProp<RootStackParamList, 'ResumoDespesas'>;
@@ -80,7 +80,7 @@ export default function ResumoDespesas() {
           .sort((a, b) => b.valor - a.valor)
       );
     } catch (error) {
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar os gastos.'));
+      toast.erro(mensagemErro(error, 'Não foi possível carregar os gastos.'));
     } finally {
       if (!opts?.silent) setCarregando(false);
     }
@@ -110,7 +110,7 @@ export default function ResumoDespesas() {
       </XStack>
 
       {carregando ? (
-        <Carregando />
+        <ListaEsqueleto quantidade={3} />
       ) : (
         <FlatList
           data={porPropriedade}
@@ -133,16 +133,10 @@ export default function ResumoDespesas() {
               {porCategoria.length > 0 && (
                 <Cartao marginBottom={20}>
                   <TituloSecao>Por categoria</TituloSecao>
-                  {porCategoria.map((c) => (
-                    <XStack key={c.categoria} justifyContent="space-between" paddingVertical={6}>
-                      <Text fontSize={14} color="texto">
-                        {LABELS_CATEGORIA[c.categoria]}
-                      </Text>
-                      <Text fontSize={14} fontWeight="600" color="verde">
-                        {formatarMoeda(c.valor)}
-                      </Text>
-                    </XStack>
-                  ))}
+                  <GraficoBarras
+                    formatar={formatarMoeda}
+                    dados={porCategoria.map((c) => ({ rotulo: LABELS_CATEGORIA[c.categoria], valor: c.valor }))}
+                  />
                 </Cartao>
               )}
 
@@ -152,6 +146,7 @@ export default function ResumoDespesas() {
           ListEmptyComponent={<EstadoVazio icone="dollar-sign" texto="Nenhuma despesa nesse período." marginTop={16} />}
           renderItem={({ item }) => (
             <ItemLista
+              icone="map"
               titulo={item.nome}
               onPress={() => navigation.navigate('DespesasLista', { propriedadeId: item.propriedadeId })}
               direita={

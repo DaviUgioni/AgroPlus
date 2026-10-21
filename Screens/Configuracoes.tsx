@@ -11,7 +11,7 @@ import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
 import appConfig from '../app.json';
-import { Botao, Cabecalho, Campo, Cartao, Dica, Tela, TituloSecao } from '../Components/ui';
+import { Botao, Cabecalho, Campo, Cartao, Dica, Tela, TituloSecao, toast, confirmar } from '../Components/ui';
 import { alterarNome, enviarLinkTrocaSenha, excluirConta, nomeDoUsuario } from '../Services/conta';
 import { lerPreferencias, salvarPreferencia } from '../Services/preferencias';
 import {
@@ -130,7 +130,7 @@ export default function Configuracoes() {
 
   async function handleSalvarNome() {
     if (!nome.trim()) {
-      Alert.alert('Falta o nome', 'Digite como você quer ser chamado no app.');
+      toast.erro('Digite como você quer ser chamado no app.');
       return;
     }
     try {
@@ -138,7 +138,7 @@ export default function Configuracoes() {
       await alterarNome(nome);
       setEditandoNome(false);
     } catch (error) {
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível salvar o nome.'));
+      toast.erro(mensagemErro(error, 'Não foi possível salvar o nome.'));
     } finally {
       setSalvandoNome(false);
     }
@@ -154,7 +154,7 @@ export default function Configuracoes() {
             await enviarLinkTrocaSenha();
             Alert.alert('Link enviado', 'Abra seu e-mail e siga as instruções. Confira também a caixa de spam.');
           } catch (error) {
-            Alert.alert('Erro', mensagemErro(error, 'Não foi possível enviar o link.'));
+            toast.erro(mensagemErro(error, 'Não foi possível enviar o link.'));
           }
         },
       },
@@ -172,7 +172,7 @@ export default function Configuracoes() {
       Alert.alert('Nada para exportar', 'Cadastre uma propriedade primeiro.');
       return;
     }
-    Alert.alert('Erro', mensagemErro(error, 'Não foi possível gerar a planilha.'));
+    toast.erro(mensagemErro(error, 'Não foi possível gerar a planilha.'));
   }
 
   async function handleBaixar() {
@@ -208,21 +208,15 @@ export default function Configuracoes() {
   }
 
   function handleSair() {
-    Alert.alert('Sair da conta', 'Você vai precisar do e-mail e da senha para entrar de novo.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
+    confirmar({ titulo: 'Sair da conta', texto: 'Você vai precisar do e-mail e da senha para entrar de novo.', confirmar: 'Sair' }).then(async (ok) => {
+      if (!ok) return;
           try {
             await signOut(auth);
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
           } catch {
-            Alert.alert('Erro', 'Não foi possível sair.');
+            toast.erro('Não foi possível sair.');
           }
-        },
-      },
-    ]);
+    });
   }
 
   function fecharExclusao() {
@@ -264,7 +258,7 @@ export default function Configuracoes() {
         {/* Perfil */}
         <Cartao gap={14}>
           <XStack alignItems="center" gap={14}>
-            <YStack width={56} height={56} borderRadius="full" backgroundColor="verde" alignItems="center" justifyContent="center">
+            <YStack width={56} height={56} borderRadius="full" backgroundColor="verdeDestaque" alignItems="center" justifyContent="center">
               <Text fontSize={24} fontWeight="700" color="sobreVerde">
                 {nomeExibido.charAt(0).toUpperCase()}
               </Text>
@@ -408,7 +402,7 @@ export default function Configuracoes() {
                     const n = await criarPropriedadesExemplo();
                     Alert.alert('Pronto', `${n} propriedades criadas, com talhões, plantios e despesas.`);
                   } catch (e) {
-                    Alert.alert('Erro', mensagemErro(e, 'Não foi possível criar.'));
+                    toast.erro(mensagemErro(e, 'Não foi possível criar.'));
                   }
                 }}
               />
@@ -422,7 +416,7 @@ export default function Configuracoes() {
                     const n = await apagarPropriedadesExemplo();
                     Alert.alert('Pronto', `${n} propriedades apagadas.`);
                   } catch (e) {
-                    Alert.alert('Erro', mensagemErro(e, 'Não foi possível apagar.'));
+                    toast.erro(mensagemErro(e, 'Não foi possível apagar.'));
                   }
                 }}
               />

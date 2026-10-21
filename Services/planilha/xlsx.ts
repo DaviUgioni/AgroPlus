@@ -63,7 +63,7 @@ export const celula = (v: Valor, s?: Estilo): Celula => ({ v, s });
 
 // ---------- estilos ----------
 // Cada estilo vira um <xf> em styles.xml; a ordem define o índice usado nas células.
-const VERDE = 'FF1A9E4A';
+const VERDE = 'FF158540';
 const VERDE_ESCURO = 'FF147A3A';
 const VERDE_SUAVE = 'FFEAF3DE';
 const TEXTO = 'FF1C1C1A';

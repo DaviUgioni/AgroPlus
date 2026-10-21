@@ -11,7 +11,7 @@ const PERGUNTAS = [
   {
     pergunta: 'Por onde eu começo?',
     resposta:
-      '1. Cadastre sua propriedade em Propriedades → "Nova propriedade".\n2. Abra a propriedade e crie os talhões (as partes dela).\n3. Registre os plantios e lance as despesas. O app faz as contas para você.',
+      '1. Cadastre sua propriedade na aba Áreas → "Nova propriedade".\n2. Abra a propriedade e crie os talhões (as partes dela).\n3. Registre os plantios e lance as despesas. O app faz as contas para você.',
   },
   {
     pergunta: 'O que é um talhão?',
@@ -21,7 +21,7 @@ const PERGUNTAS = [
   {
     pergunta: 'Como registro um plantio?',
     resposta:
-      'Vá em Plantios, escolha a propriedade e toque em "Novo plantio". Escolha o que foi plantado e onde. O plantio fica com a data de hoje.',
+      'Abra a aba Plantios, escolha a propriedade nos botões do topo e toque em "Novo plantio". Escolha o que foi plantado e onde. O plantio fica com a data de hoje.',
   },
   {
     pergunta: 'Como o app calcula a colheita?',
@@ -31,17 +31,12 @@ const PERGUNTAS = [
   {
     pergunta: 'Como lanço uma despesa?',
     resposta:
-      'Vá em Despesas, escolha a propriedade e toque em "Nova despesa". Informe o valor, com o que foi gasto e a categoria. Se quiser, anexe a foto da nota fiscal.',
+      'Abra a aba Despesas, escolha a propriedade nos botões do topo e toque em "Nova despesa". Informe o valor, com o que foi gasto e a categoria. Se quiser, anexe a foto da nota fiscal. Na tela Início, o atalho "Lançar despesa" faz o mesmo mais rápido.',
   },
   {
     pergunta: 'O que é uma despesa "Mensal" ou "Agendada"?',
     resposta:
       'Ao marcar "Repetir todo mês", o app lança a mesma despesa nos próximos meses (bom para salário ou aluguel). As dos meses que ainda não chegaram aparecem como "Agendada" e só entram no total quando o mês chegar.',
-  },
-  {
-    pergunta: 'Para que serve o limite de gastos?',
-    resposta:
-      'Na lista de despesas de uma propriedade você pode definir quanto quer gastar por mês. Uma barra mostra quanto já foi usado e fica vermelha se você passar do limite.',
   },
   {
     pergunta: 'Como levo meus dados para o Excel?',

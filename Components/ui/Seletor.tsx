@@ -8,6 +8,7 @@ import { Text, XStack, YStack } from 'tamagui';
 import { cores } from '../../tamagui.config';
 import { CaixaCampo } from './Campo';
 import { Rotulo, TextoAjuda } from './Textos';
+import { vibrar } from './vibrar';
 
 export interface OpcaoSeletor<T> {
   label: string;
@@ -40,6 +41,7 @@ export default function Seletor<T extends string | number>({
   const selecionada = opcoes.find((o) => o.valor === valor);
 
   function escolher(v: T) {
+    vibrar();
     aoMudar(v);
     setAberto(false);
   }
@@ -75,7 +77,7 @@ export default function Seletor<T extends string | number>({
       <Modal
         visible={aberto}
         transparent
-        animationType="fade"
+        animationType="fade" // só o fundo escurece; a folha sobe pela animação abaixo
         statusBarTranslucent
         navigationBarTranslucent
         onRequestClose={() => setAberto(false)}
@@ -98,6 +100,8 @@ export default function Seletor<T extends string | number>({
             paddingTop={12}
             paddingBottom={insets.bottom + 12}
             maxHeight="70%"
+            animation="medium"
+            y="enter:400"
           >
             <YStack alignSelf="center" width={40} height={4} borderRadius="full" backgroundColor="borda" />
             <Text fontSize={16} fontWeight="600" color="texto" paddingHorizontal={20} paddingTop={16} paddingBottom={8}>

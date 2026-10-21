@@ -10,30 +10,10 @@ import { Feather } from '@expo/vector-icons';
 import { Spinner, Text, XStack, YStack } from 'tamagui';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao } from '../Components/ui';
+import { Botao, toast } from '../Components/ui';
 import { useModo } from '../Components/ModoContext';
+import { ESTILO_MAPA_ESCURO } from '../Components/estiloMapaEscuro';
 import { mensagemErro } from '../Services/erros';
-
-// Estilo noturno do Google Maps (Android). No iOS o mapa usa userInterfaceStyle.
-const ESTILO_MAPA_ESCURO = [
-  { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#d59563' }] },
-  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#d59563' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#263c3f' }] },
-  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#6b9a76' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#38414e' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#212a37' }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9ca5b3' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#746855' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#1f2835' }] },
-  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#f3d19c' }] },
-  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2f3948' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#17263c' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#515c6d' }] },
-  { featureType: 'water', elementType: 'labels.text.stroke', stylers: [{ color: '#17263c' }] },
-];
 
 type MapaSelecaoRouteProp = RouteProp<RootStackParamList, 'MapaSelecao'>;
 type MapaSelecaoNavigationProp = NavigationProp<RootStackParamList, 'MapaSelecao'>;
@@ -118,7 +98,7 @@ export default function MapaSelecao() {
 
   const handleConfirmar = () => {
     if (!localizacaoSelecionada) {
-      Alert.alert('Atenção', 'Selecione uma localização no mapa.');
+      toast.erro('Selecione uma localização no mapa.');
       return;
     }
     // No React Navigation 7 o navigate() empilha uma nova tela; popTo volta
@@ -159,7 +139,7 @@ export default function MapaSelecao() {
         }, 1000);
       }
     } catch (err) {
-      Alert.alert('Erro', mensagemErro(err, 'Não foi possível obter a localização.'));
+      toast.erro(mensagemErro(err, 'Não foi possível obter a localização.'));
       console.error(err);
     } finally {
       setLocationLoading(false);
@@ -265,7 +245,7 @@ export default function MapaSelecao() {
             </Text>
             <XStack backgroundColor="verdeSuave" paddingHorizontal={8} paddingVertical={3} borderRadius="lg" gap={4} alignItems="center">
               <Feather name="move" size={10} color={cores.verde} />
-              <Text fontSize={12} fontWeight="600" color="verde">
+              <Text fontSize={13} fontWeight="600" color="verde">
                 Pino arrastável
               </Text>
             </XStack>

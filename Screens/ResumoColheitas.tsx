@@ -9,7 +9,7 @@ import { listarPropriedades } from '../Services/propriedades';
 import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plantio } from '../Services/plantios';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Cabecalho, Carregando, EstadoVazio, ItemLista, Tela } from '../Components/ui';
+import { Cabecalho, EstadoVazio, IconeLista, ItemLista, ListaEsqueleto, Tela, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type NavProp = NavigationProp<RootStackParamList>;
@@ -57,7 +57,7 @@ export default function ResumoColheitas() {
       todas.sort((a, b) => a.diasRestantes - b.diasRestantes);
       setLinhas(todas);
     } catch (error) {
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar as colheitas.'));
+      toast.erro(mensagemErro(error, 'Não foi possível carregar as colheitas.'));
     } finally {
       if (!opts?.silent) setCarregando(false);
     }
@@ -80,7 +80,7 @@ export default function ResumoColheitas() {
       <Cabecalho titulo="Colheitas" subtitulo="Ordenadas pela mais próxima" />
 
       {carregando ? (
-        <Carregando />
+        <ListaEsqueleto quantidade={3} />
       ) : linhas.length === 0 ? (
         <EstadoVazio icone="feather" texto="Nenhum plantio cadastrado ainda." />
       ) : (
@@ -101,18 +101,7 @@ export default function ResumoColheitas() {
                   propriedadeNome: item.propriedadeNome,
                 })
               }
-              esquerda={
-                <YStack
-                  width={40}
-                  height={40}
-                  borderRadius="full"
-                  backgroundColor={item.pronto ? 'alertaSuave' : 'verdeSuave'}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Feather name="feather" size={18} color={item.pronto ? cores.alerta : cores.verde} />
-                </YStack>
-              }
+              esquerda={<IconeLista icone="feather" tom={item.pronto ? 'alerta' : 'verde'} />}
             >
               <Text fontSize={13} fontWeight="600" color={item.pronto ? 'alerta' : 'verde'} marginTop={4}>
                 {item.texto}

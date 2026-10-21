@@ -9,7 +9,7 @@ import { RootStackParamList } from '../App';
 import { Feather } from '@expo/vector-icons';
 import { Text, XStack, YStack } from 'tamagui';
 import { cores } from '../tamagui.config';
-import { Botao, Cabecalho, Cartao, Seletor, Tela } from '../Components/ui';
+import { Botao, Cabecalho, Cartao, Seletor, Tela, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type PlantioFormRouteProp = RouteProp<RootStackParamList, 'PlantioForm'>;
@@ -32,7 +32,7 @@ export default function PlantioForm() {
   async function handleSalvar() {
     const tipo = buscarTipoPlantio(tipoSel);
     if (!tipo) {
-      Alert.alert('Atenção', 'Selecione um tipo de plantio.');
+      toast.erro('Selecione um tipo de plantio.');
       return;
     }
     const talhao = talhoes.find((t) => t.id === talhaoSel);
@@ -48,10 +48,10 @@ export default function PlantioForm() {
         diasParaColheita: tipo.diasParaColheita,
         dataPlantio: Timestamp.now(),
       });
-      Alert.alert('Sucesso', 'Plantio cadastrado!');
+      toast.sucesso('Plantio cadastrado!');
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert('Erro', mensagemErro(error, error?.message || 'Não foi possível salvar.'));
+      toast.erro(mensagemErro(error, error?.message || 'Não foi possível salvar.'));
     } finally {
       setSalvando(false);
     }
@@ -106,7 +106,7 @@ export default function PlantioForm() {
                 </YStack>
               </XStack>
               <XStack gap={12} alignItems="center">
-                <YStack width={40} height={40} borderRadius="full" backgroundColor="verde" alignItems="center" justifyContent="center">
+                <YStack width={40} height={40} borderRadius="full" backgroundColor="verdeDestaque" alignItems="center" justifyContent="center">
                   <Feather name="sun" size={18} color={cores.sobreVerde} />
                 </YStack>
                 <YStack flex={1}>

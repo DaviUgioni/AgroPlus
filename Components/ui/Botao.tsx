@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { GetProps, Spinner, Text, XStack, styled } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { cores } from '../../tamagui.config';
+import { vibrar } from './vibrar';
 
 export type IconeFeather = ComponentProps<typeof Feather>['name'];
 
@@ -19,14 +20,18 @@ const Moldura = styled(XStack, {
   borderRadius: 'xl',
   borderWidth: 1.5,
   borderColor: 'transparent',
+  minHeight: 52,
   paddingVertical: 14,
-  paddingHorizontal: 16,
+  paddingHorizontal: 20,
+  animation: 'quick',
+  scale: 'press:0.97',
 
   variants: {
     variante: {
       primario: {
-        backgroundColor: 'verde press:verdeEscuro',
-        borderColor: 'verde press:verdeEscuro',
+        backgroundColor: 'verdeDestaque press:verdeEscuro',
+        borderColor: 'verdeDestaque press:verdeEscuro',
+        boxShadow: '0 2px 6px rgba(21, 133, 64, 0.25)',
       },
       secundario: {
         backgroundColor: 'branco press:verdeSuave',
@@ -39,11 +44,13 @@ const Moldura = styled(XStack, {
       },
       perigo: {
         backgroundColor: 'erroSuave',
-        borderColor: 'erroSuave',
+        borderColor: 'erro',
+        borderWidth: 1,
         opacity: 'press:0.75',
       },
       texto: {
         backgroundColor: 'transparent',
+        minHeight: 44,
         paddingHorizontal: 8,
         opacity: 'press:0.6',
       },
@@ -109,7 +116,14 @@ export default function Botao({
       variante={variante}
       tamanho={tamanho}
       desabilitado={bloqueado}
-      onPress={bloqueado ? undefined : onPress}
+      onPress={
+        bloqueado
+          ? undefined
+          : (e) => {
+              vibrar(variante === 'perigo' ? 'aviso' : 'leve');
+              onPress?.(e);
+            }
+      }
       accessibilityRole="button"
       accessibilityState={{ disabled: bloqueado, busy: !!carregando }}
       {...props}
@@ -129,14 +143,15 @@ export default function Botao({
 }
 
 // Botão fixo no rodapé da tela, acima da área segura (ex.: "Nova propriedade").
-export function BotaoFlutuante(props: BotaoProps) {
+// `naAba`: a tela está dentro da barra de abas, que já cobre a área segura.
+export function BotaoFlutuante({ naAba, ...props }: BotaoProps & { naAba?: boolean }) {
   const insets = useSafeAreaInsets();
   return (
     <Botao
       position="absolute"
       left={20}
       right={20}
-      bottom={Math.max(insets.bottom, 12) + 8}
+      bottom={naAba ? 16 : Math.max(insets.bottom, 12) + 8}
       boxShadow="0 4px 12px rgba(0, 0, 0, 0.18)"
       {...props}
     />

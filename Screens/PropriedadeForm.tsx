@@ -10,7 +10,8 @@ import { criarPropriedade, buscarPropriedade, atualizarPropriedade, type Proprie
 import { enviarImagemPropriedade } from '../Services/imagens';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, Cabecalho, Campo, Rotulo, Tela, TelaCarregando } from '../Components/ui';
+import { Botao, Cabecalho, Campo, Rotulo, Tela, TelaCarregando, toast, confirmar } from '../Components/ui';
+import { MAPA_DISPONIVEL } from '../constants/mapa';
 import { mensagemErro } from '../Services/erros';
 
 type PropriedadeFormRouteProp = RouteProp<RootStackParamList, 'PropriedadeForm'>;
@@ -24,6 +25,7 @@ export default function PropriedadeForm() {
 
   const [nome, setNome] = useState('');
   const [localizacao, setLocalizacao] = useState('');
+  const [erros, setErros] = useState<{ nome?: string; localizacao?: string; area?: string }>({});
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
   const [areaTotal, setAreaTotal] = useState('');
@@ -72,7 +74,7 @@ export default function PropriedadeForm() {
       }
     } catch (error) {
       console.log('Erro ao carregar propriedade:', error);
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar a propriedade.'));
+      toast.erro(mensagemErro(error, 'Não foi possível carregar a propriedade.'));
     } finally {
       setCarregando(false);
     }
@@ -81,7 +83,7 @@ export default function PropriedadeForm() {
   const handleEscolherImagem = async () => {
     const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissao.granted) {
-      Alert.alert('Atenção', 'Permissão de acesso à galeria necessária.');
+      toast.erro('Permissão de acesso à galeria necessária.');
       return;
     }
 
@@ -98,6 +100,10 @@ export default function PropriedadeForm() {
   };
 
   const handleAbrirMapa = () => {
+    if (!MAPA_DISPONIVEL) {
+      toast.info('O mapa não está disponível nesta versão. Digite a cidade ou o endereço.');
+      return;
+    }
     navigation.navigate('MapaSelecao', {
       latitude,
       longitude,
@@ -113,17 +119,11 @@ export default function PropriedadeForm() {
 
   const handleRemoverImagem = () => {
     if (imagemUrl) {
-      Alert.alert('Remover imagem', 'Tem certeza que deseja remover a imagem desta propriedade?', [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: () => {
+      confirmar({ titulo: 'Remover imagem', texto: 'Tem certeza que deseja remover a imagem desta propriedade?', confirmar: 'Remover' }).then(async (ok) => {
+      if (!ok) return;
             setImagemLocal(undefined);
             setImagemUrl(undefined);
-          },
-        },
-      ]);
+    });
     } else {
       setImagemLocal(undefined);
       setImagemUrl(undefined);
@@ -131,28 +131,21 @@ export default function PropriedadeForm() {
   };
 
   async function handleSalvar() {
-    if (!nome.trim()) {
-      Alert.alert('Falta o nome', 'Dê um nome à propriedade, por exemplo "Sítio Boa Vista".');
-      return;
-    }
-    if (!localizacao.trim()) {
-      Alert.alert('Falta a localização', 'Digite a cidade ou toque em "Marcar no mapa".');
-      return;
-    }
-    if (!areaTotal.trim()) {
-      Alert.alert('Falta o tamanho', 'Informe o tamanho da propriedade em hectares.');
-      return;
-    }
-
     const area = Number(areaTotal.replace(',', '.'));
-    if (isNaN(area) || area <= 0) {
-      Alert.alert('Tamanho inválido', 'Digite só números, por exemplo 12,5.');
+    const novosErros: typeof erros = {};
+    if (!nome.trim()) novosErros.nome = 'Dê um nome à propriedade, por exemplo "Sítio Boa Vista".';
+    if (!localizacao.trim()) novosErros.localizacao = 'Digite a cidade ou toque em "Marcar no mapa".';
+    if (!areaTotal.trim()) novosErros.area = 'Informe o tamanho em hectares.';
+    else if (isNaN(area) || area <= 0) novosErros.area = 'Digite só números, por exemplo 12,5.';
+    setErros(novosErros);
+    if (Object.keys(novosErros).length > 0) {
+      toast.erro('Confira os campos em vermelho.');
       return;
     }
 
     const userId = auth.currentUser?.uid;
     if (!userId) {
-      Alert.alert('Erro', 'Usuário não autenticado.');
+      toast.erro('Usuário não autenticado.');
       return;
     }
 
@@ -179,11 +172,11 @@ export default function PropriedadeForm() {
         await atualizarPropriedade(id!, { imagemUrl: url });
       }
 
-      Alert.alert('Sucesso', modoEdicao ? 'Propriedade atualizada!' : 'Propriedade cadastrada!');
+      toast.sucesso(modoEdicao ? 'Propriedade atualizada!' : 'Propriedade cadastrada!');
       navigation.goBack();
     } catch (error) {
       console.log('Erro ao salvar propriedade:', error);
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível salvar. Tente novamente.'));
+      toast.erro(mensagemErro(error, 'Não foi possível salvar. Tente novamente.'));
     } finally {
       setSalvando(false);
     }
@@ -208,7 +201,11 @@ export default function PropriedadeForm() {
           <Campo
             rotulo="Nome da propriedade"
             value={nome}
-            onChangeText={setNome}
+            onChangeText={(v) => {
+              setNome(v);
+              setErros((e) => ({ ...e, nome: undefined }));
+            }}
+            erro={erros.nome}
             placeholder="Ex.: Sítio Boa Vista"
             ajuda="Como você chama este lugar."
           />
@@ -217,7 +214,11 @@ export default function PropriedadeForm() {
             rotulo="Localização"
             icone="map-pin"
             value={localizacao}
-            onChangeText={setLocalizacao}
+            onChangeText={(v) => {
+              setLocalizacao(v);
+              setErros((e) => ({ ...e, localizacao: undefined }));
+            }}
+            erro={erros.localizacao}
             placeholder="Ex.: Criciúma, SC"
             multiline
             textAlignVertical="top"
@@ -240,7 +241,12 @@ export default function PropriedadeForm() {
           <Campo
             rotulo="Tamanho total em hectares (ha)"
             value={areaTotal}
-            onChangeText={setAreaTotal}
+            onChangeText={(v) => {
+              setAreaTotal(v);
+              setErros((e) => ({ ...e, area: undefined }));
+            }}
+            erro={erros.area}
+            sufixo="ha"
             placeholder="Ex.: 12,5"
             keyboardType="numeric"
             ajuda="1 hectare = 10.000 m² (mais ou menos um campo de futebol)."

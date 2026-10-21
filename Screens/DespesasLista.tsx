@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { FlatList, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
@@ -15,12 +15,9 @@ import {
   CategoriaDespesa,
   LABELS_CATEGORIA,
 } from '../Services/despesas';
-import { buscarPropriedade } from '../Services/propriedades';
-import { doc, updateDoc, deleteField } from 'firebase/firestore';
-import { db } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { BarraProgresso, Botao, BotaoFlutuante, Cabecalho, Campo, Carregando, Cartao, EstadoVazio, Seletor, Tela } from '../Components/ui';
+import { Botao, BotaoFlutuante, Cabecalho, Cartao, EstadoVazio, GraficoColunas, ListaEsqueleto, Seletor, Tela, toast, confirmar } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 import { baixarPlanilha, CanceladoError, compartilharPlanilha } from '../Services/planilha';
 
@@ -29,10 +26,11 @@ type NavProp = NavigationProp<RootStackParamList>;
 
 const MESES = ['Todos', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-export default function DespesasLista() {
+/** `embutido`: usado dentro da aba Despesas, sem cabeçalho nem moldura de tela */
+export default function DespesasLista({ embutido, propriedadeId: idEmbutido }: { embutido?: boolean; propriedadeId?: string }) {
   const route = useRoute<DespesasListaRouteProp>();
   const navigation = useNavigation<NavProp>();
-  const { propriedadeId, talhaoId, talhaoNome } = (route.params ?? {}) as any;
+  const { propriedadeId, talhaoId, talhaoNome } = { ...(route.params ?? {}), ...(idEmbutido ? { propriedadeId: idEmbutido } : {}) } as any;
   const insets = useSafeAreaInsets();
   const modoTalhao = !!talhaoId;
 
@@ -41,37 +39,20 @@ export default function DespesasLista() {
   const [atualizando, setAtualizando] = useState(false);
   const [filtroCat, setFiltroCat] = useState<'todas' | CategoriaDespesa>('todas');
   const [filtroMes, setFiltroMes] = useState<number>(-1); // -1 todos, 0-11
-  const [limite, setLimite] = useState<string>('');
-  const [limiteSalvo, setLimiteSalvo] = useState<number | undefined>(undefined);
-  const [salvandoLimite, setSalvandoLimite] = useState(false);
-  const [editandoLimite, setEditandoLimite] = useState(false);
   const [exportando, setExportando] = useState(false);
-
-  // Fecha o editor do limite assim que um valor é salvo ou removido
-  useEffect(() => {
-    setEditandoLimite(false);
-  }, [limiteSalvo]);
 
   async function carregarDespesas(opts?: { silent?: boolean }) {
     if (!propriedadeId) {
-      Alert.alert('Erro', 'Propriedade não informada.');
+      toast.erro('Propriedade não informada.');
       return;
     }
     try {
       if (!opts?.silent) setCarregando(true);
       const dados = modoTalhao ? await listarDespesasPorTalhao(talhaoId, propriedadeId) : await listarDespesasPorPropriedade(propriedadeId);
-      const prop = await buscarPropriedade(propriedadeId);
       setDespesas(dados);
-      if (!modoTalhao && prop?.limiteMensal) {
-        setLimiteSalvo(prop.limiteMensal);
-        setLimite(String(prop.limiteMensal).replace('.', ','));
-      } else {
-        setLimiteSalvo(undefined);
-        if (!modoTalhao) setLimite('');
-      }
     } catch (error) {
       console.log('ERRO DESPESAS:', error);
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar as despesas.'));
+      toast.erro(mensagemErro(error, 'Não foi possível carregar as despesas.'));
     } finally {
       if (!opts?.silent) setCarregando(false);
     }
@@ -115,51 +96,16 @@ export default function DespesasLista() {
   const totalMes = totalDespesasMes(despesasAteAgora, anoAtual, filtroMes !== -1 ? filtroMes : mesAtual);
   const totalAno = totalDespesasAno(despesasAteAgora, anoAtual);
 
-  const limiteNum = parseFloat(limite.replace(',', '.'));
-  const estourou = limiteSalvo !== undefined && !isNaN(limiteNum) && totalMes > limiteNum;
-
   function handleExcluir(id: string) {
-    Alert.alert('Excluir despesa', 'Tem certeza que deseja excluir?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir',
-        style: 'destructive',
-        onPress: async () => {
+    confirmar({ titulo: 'Excluir despesa', texto: 'Tem certeza que deseja excluir?', confirmar: 'Excluir' }).then(async (ok) => {
+      if (!ok) return;
           try {
             await excluirDespesa(id);
             carregarDespesas();
           } catch (error) {
-            Alert.alert('Erro', mensagemErro(error, 'Não foi possível excluir.'));
+            toast.erro(mensagemErro(error, 'Não foi possível excluir.'));
           }
-        },
-      },
-    ]);
-  }
-
-  async function handleSalvarLimite() {
-    if (!propriedadeId) return;
-    const v = parseFloat(limite.replace(',', '.'));
-    if (limite && (isNaN(v) || !isFinite(v) || v <= 0)) {
-      Alert.alert('Atenção', 'Limite inválido.');
-      return;
-    }
-    try {
-      setSalvandoLimite(true);
-      const ref = doc(db, 'propriedades', propriedadeId);
-      if (limite) {
-        await updateDoc(ref, { limiteMensal: v } as any);
-        setLimiteSalvo(v);
-        Alert.alert('Sucesso', `Limite de ${v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} salvo.`);
-      } else {
-        await updateDoc(ref, { limiteMensal: deleteField() } as any);
-        setLimiteSalvo(undefined);
-        Alert.alert('Sucesso', 'Limite removido.');
-      }
-    } catch (error) {
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível salvar o limite.'));
-    } finally {
-      setSalvandoLimite(false);
-    }
+    });
   }
 
   async function gerarPlanilha(acao: 'baixar' | 'compartilhar') {
@@ -174,7 +120,7 @@ export default function DespesasLista() {
     } catch (e: any) {
       if (e instanceof CanceladoError) return;
       console.log('Erro export', e);
-      Alert.alert('Erro', mensagemErro(e, 'Não foi possível gerar a planilha.'));
+      toast.erro(mensagemErro(e, 'Não foi possível gerar a planilha.'));
     } finally {
       setExportando(false);
     }
@@ -191,7 +137,18 @@ export default function DespesasLista() {
   const formatarMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const temFiltro = filtroCat !== 'todas' || filtroMes !== -1;
   const nomeMes = filtroMes !== -1 ? MESES[filtroMes + 1] : MESES[mesAtual + 1];
-  const usoLimite = limiteSalvo ? totalMes / limiteSalvo : 0;
+  const mesDestaque = filtroMes !== -1 ? filtroMes : mesAtual;
+
+  // Gasto de cada mês do ano (respeita a categoria escolhida; só o que já venceu)
+  const gastoPorMes = useMemo(() => {
+    const meses = Array.from({ length: 12 }, () => 0);
+    for (const d of despesasAteAgora) {
+      if (filtroCat !== 'todas' && d.categoria !== filtroCat) continue;
+      const dt = d.data?.toDate?.();
+      if (dt && dt.getFullYear() === anoAtual) meses[dt.getMonth()] += d.valor;
+    }
+    return meses;
+  }, [despesasAteAgora, filtroCat, anoAtual]);
 
   const topo = (
     <>
@@ -222,79 +179,33 @@ export default function DespesasLista() {
         </XStack>
       </Cartao>
 
-      {!modoTalhao && (
-        <Cartao marginBottom={12} padding={14} gap={10}>
-          {limiteSalvo !== undefined && !editandoLimite ? (
-            <>
-              <XStack justifyContent="space-between" alignItems="center">
-                <YStack flex={1}>
-                  <Text fontSize={14} fontWeight="600" color="texto">
-                    Limite de gastos do mês
-                  </Text>
-                  <Text fontSize={13} color={estourou ? 'erro' : 'textoSec'} marginTop={2}>
-                    {formatarMoeda(totalMes)} de {formatarMoeda(limiteSalvo)} ({Math.round(usoLimite * 100)}%)
-                  </Text>
-                </YStack>
-                <Botao variante="texto" tamanho="sm" titulo="Alterar" onPress={() => setEditandoLimite(true)} />
-              </XStack>
-              <BarraProgresso valor={usoLimite} cor={estourou ? 'erro' : usoLimite >= 0.8 ? 'alerta' : 'verde'} />
-              {estourou && (
-                <Text fontSize={13} fontWeight="600" color="erro">
-                  Você passou do limite deste mês.
-                </Text>
-              )}
-            </>
-          ) : editandoLimite ? (
-            <>
-              <Text fontSize={14} fontWeight="600" color="texto">
-                Limite de gastos do mês
-              </Text>
-              <Text fontSize={13} color="textoSec">
-                O app avisa quando os gastos do mês passarem desse valor. Deixe vazio e salve para remover.
-              </Text>
-              <XStack gap={8} alignItems="flex-start">
-                <YStack flex={1}>
-                  <Campo
-                    value={limite}
-                    onChangeText={setLimite}
-                    placeholder="Ex.: 2000"
-                    keyboardType="numeric"
-                    icone="dollar-sign"
-                  />
-                </YStack>
-                <Botao titulo="Salvar" carregando={salvandoLimite} minHeight={50} onPress={handleSalvarLimite} />
-              </XStack>
-              <Botao
-                variante="texto"
-                tamanho="sm"
-                titulo="Cancelar"
-                alignSelf="flex-start"
-                paddingHorizontal={0}
-                onPress={() => setEditandoLimite(false)}
-              />
-            </>
+      <Cartao marginBottom={12} padding={14} gap={10}>
+        <XStack justifyContent="space-between" alignItems="center">
+          <YStack flex={1}>
+            <Text fontSize={14} fontWeight="700" color="texto">
+              Gasto por mês em {anoAtual}
+            </Text>
+            <Text fontSize={13} color="textoSec" marginTop={2}>
+              {MESES[mesDestaque + 1]}: {formatarMoeda(gastoPorMes[mesDestaque])}
+            </Text>
+          </YStack>
+          {filtroMes !== -1 ? (
+            <Text fontSize={13} fontWeight="700" color="verde" onPress={() => setFiltroMes(-1)} accessibilityRole="button">
+              Ver todos os meses
+            </Text>
           ) : (
-            <XStack
-              alignItems="center"
-              gap={10}
-              onPress={() => setEditandoLimite(true)}
-              opacity="press:0.7"
-              accessibilityRole="button"
-            >
-              <Feather name="target" size={20} color={cores.verde} />
-              <YStack flex={1}>
-                <Text fontSize={14} fontWeight="600" color="verde">
-                  Definir um limite de gastos por mês
-                </Text>
-                <Text fontSize={13} color="textoSec" marginTop={2}>
-                  Opcional: o app avisa quando você passar dele.
-                </Text>
-              </YStack>
-              <Feather name="chevron-right" size={18} color={cores.textoTerc} />
-            </XStack>
+            <Text fontSize={13} color="textoSec">
+              Toque num mês
+            </Text>
           )}
-        </Cartao>
-      )}
+        </XStack>
+        <GraficoColunas
+          altura={96}
+          valores="nenhum"
+          aoTocar={(i) => setFiltroMes(filtroMes === i ? -1 : i)}
+          dados={gastoPorMes.map((valor, i) => ({ rotulo: MESES[i + 1].charAt(0), valor, destaque: i === mesDestaque }))}
+        />
+      </Cartao>
 
       <XStack gap={10} marginBottom={12}>
         <YStack flex={1}>
@@ -322,22 +233,28 @@ export default function DespesasLista() {
     </>
   );
 
+  const botaoPlanilha = <Botao variante="contorno" tamanho="sm" icone="download" titulo="Planilha" carregando={exportando} onPress={handleExportar} />;
+  const Raiz: any = embutido ? YStack : Tela;
+  const propsRaiz = embutido ? { flex: 1 } : { edges: ['top', 'left', 'right'] };
+
   return (
-    <Tela edges={['top', 'left', 'right']}>
+    <Raiz {...propsRaiz}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <Cabecalho
-          titulo="Despesas"
-          subtitulo={modoTalhao ? `Talhão: ${talhaoNome ?? ''}` : undefined}
-          direita={<Botao variante="contorno" tamanho="sm" icone="download" titulo="Planilha" carregando={exportando} onPress={handleExportar} />}
-        />
+        {embutido ? (
+          <XStack justifyContent="flex-end" marginBottom={8}>
+            {botaoPlanilha}
+          </XStack>
+        ) : (
+          <Cabecalho titulo="Despesas" subtitulo={modoTalhao ? `Talhão: ${talhaoNome ?? ''}` : undefined} direita={botaoPlanilha} />
+        )}
 
         {carregando ? (
-          <Carregando />
+          <ListaEsqueleto quantidade={3} />
         ) : (
           <FlatList
             data={despesasFiltradas}
             keyExtractor={(item) => item.id!}
-            contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+            contentContainerStyle={{ paddingBottom: embutido ? 96 : 100 + insets.bottom }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             refreshing={atualizando}
@@ -399,7 +316,7 @@ export default function DespesasLista() {
                       alignItems="center"
                     >
                       <Feather name="clock" size={12} color={cores.alerta} />
-                      <Text fontSize={12} fontWeight="700" color="alerta">
+                      <Text fontSize={13} fontWeight="700" color="alerta">
                         Agendada · entra no total quando o mês chegar
                       </Text>
                     </XStack>
@@ -451,11 +368,12 @@ export default function DespesasLista() {
 
       {despesas.length > 0 && (
         <BotaoFlutuante
+          naAba={embutido}
           icone="plus"
           titulo="Nova despesa"
           onPress={() => navigation.navigate('DespesaForm', { propriedadeId, talhaoId })}
         />
       )}
-    </Tela>
+    </Raiz>
   );
 }

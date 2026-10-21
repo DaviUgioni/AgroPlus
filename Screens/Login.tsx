@@ -9,7 +9,8 @@ import {
   Keyboard,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Text, YStack } from 'tamagui';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
@@ -17,7 +18,8 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, Campo, Subtitulo, Titulo } from '../Components/ui';
+import { Botao, Campo, toast } from '../Components/ui';
+import FaixaMarca from '../Components/FaixaMarca';
 import { mensagemErro } from '../Services/erros';
 import { lerPreferencias } from '../Services/preferencias';
 
@@ -25,6 +27,7 @@ type LoginNavigationProp = NavigationProp<RootStackParamList, 'Login'>;
 
 export default function Login() {
   const navigation = useNavigation<LoginNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [entrando, setEntrando] = useState(false);
@@ -50,11 +53,11 @@ export default function Login() {
     if (!emailNorm) setEmailErro('Preencha o e-mail.');
     else if (!isEmailValido(emailNorm)) setEmailErro('E-mail inválido.');
     if (!email || !senha) {
-      Alert.alert('Atenção', 'Preencha e-mail e senha.');
+      toast.erro('Preencha e-mail e senha.');
       return;
     }
     if (emailNorm && !isEmailValido(emailNorm)) {
-      Alert.alert('Atenção', 'Digite um e-mail válido.');
+      toast.erro('Digite um e-mail válido.');
       return;
     }
 
@@ -62,7 +65,7 @@ export default function Login() {
       setEntrando(true);
       setEmailErro('');
       await signInWithEmailAndPassword(auth, emailNorm, senha);
-      navigation.navigate('Home');
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (error: any) {
       let mensagem = mensagemErro(error, 'Não foi possível entrar.');
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
@@ -74,7 +77,7 @@ export default function Login() {
         mensagem = 'E-mail inválido.';
         setEmailErro('E-mail inválido.');
       }
-      Alert.alert('Erro', mensagem);
+      toast.erro(mensagem);
     } finally {
       setEntrando(false);
     }
@@ -82,23 +85,23 @@ export default function Login() {
 
   async function handleEsqueciSenha() {
     if (!email.trim()) {
-      Alert.alert('Atenção', 'Digite seu e-mail no campo acima para recuperar a senha.');
+      toast.erro('Digite seu e-mail no campo acima para recuperar a senha.');
       return;
     }
     try {
       await sendPasswordResetEmail(auth, email.trim());
-      Alert.alert('Enviado', 'E-mail de recuperação enviado. Verifique sua caixa de entrada.');
+      toast.sucesso('E-mail de recuperação enviado. Verifique sua caixa de entrada.');
     } catch (error: any) {
       let msg = 'Não foi possível enviar.';
       if (error.code === 'auth/user-not-found') msg = 'E-mail não encontrado.';
       else if (error.code === 'auth/invalid-email') msg = 'E-mail inválido.';
-      Alert.alert('Erro', msg);
+      toast.erro(msg);
     }
   }
 
   async function handleBiometria() {
     if (auth.currentUser) {
-      navigation.navigate('Home');
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
       return;
     }
     try {
@@ -109,13 +112,13 @@ export default function Login() {
       });
       if (result.success) {
         if (auth.currentUser) {
-          navigation.navigate('Home');
+          navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
         } else {
-          Alert.alert('Atenção', 'Nenhuma sessão salva. Faça login com e-mail e senha primeiro.');
+          toast.erro('Nenhuma sessão salva. Faça login com e-mail e senha primeiro.');
         }
       }
     } catch {
-      Alert.alert('Erro', 'Não foi possível usar a biometria.');
+      toast.erro('Não foi possível usar a biometria.');
     }
   }
 
@@ -128,35 +131,15 @@ export default function Login() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: cores.branco }}>
+    <YStack flex={1} backgroundColor="branco">
+      <StatusBar style="light" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <YStack flex={1} justifyContent="center" padding={24}>
-              <YStack alignItems="center" marginBottom={32}>
-                <YStack
-                  width={104}
-                  height={104}
-                  borderRadius="full"
-                  backgroundColor="verdeSuave"
-                  alignItems="center"
-                  justifyContent="center"
-                  marginBottom={16}
-                >
-                  <Image source={require('../assets/logo.png')} style={{ width: 80, height: 80 }} resizeMode="contain" />
-                </YStack>
-                <Titulo fontSize={24} textAlign="center">
-                  Bem-vindo ao AgroPlus
-                </Titulo>
-                <Subtitulo textAlign="center" marginTop={4}>
-                  Gerencie sua produção com facilidade
-                </Subtitulo>
-              </YStack>
+            <YStack flex={1}>
+              <FaixaMarca titulo="Bem-vindo ao AgroPlus" subtitulo="Gerencie sua produção com facilidade" />
 
+              <YStack padding={24} paddingBottom={insets.bottom + 24} flex={1} justifyContent="center">
               <YStack gap={4}>
                 <Campo
                   rotulo="E-mail"
@@ -220,10 +203,11 @@ export default function Login() {
                   Criar conta
                 </Text>
               </Text>
+              </YStack>
             </YStack>
           </TouchableWithoutFeedback>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </YStack>
   );
 }

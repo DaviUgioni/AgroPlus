@@ -4,7 +4,7 @@ import { useNavigation, useFocusEffect, NavigationProp } from '@react-navigation
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { RootStackParamList } from '../App';
-import { BotaoFlutuante, Cabecalho, Carregando, EstadoVazio, ItemLista, Tela } from '../Components/ui';
+import { BotaoFlutuante, Cabecalho, EstadoVazio, ItemLista, ListaEsqueleto, Tela, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type PropriedadesNavigationProp = NavigationProp<RootStackParamList, 'Propriedades'>;
@@ -18,7 +18,7 @@ export default function Propriedades() {
   async function carregarPropriedades(opts?: { silent?: boolean }) {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-      Alert.alert('Erro', 'Usuário não autenticado.');
+      toast.erro('Usuário não autenticado.');
       return;
     }
 
@@ -28,7 +28,7 @@ export default function Propriedades() {
       setPropriedades(dados);
     } catch (error) {
       console.log('Erro ao listar propriedades:', error);
-      Alert.alert('Erro', mensagemErro(error, 'Não foi possível carregar as propriedades.'));
+      toast.erro(mensagemErro(error, 'Não foi possível carregar as propriedades.'));
     } finally {
       if (!opts?.silent) setCarregando(false);
     }
@@ -49,10 +49,10 @@ export default function Propriedades() {
 
   return (
     <Tela edges={['top', 'left', 'right']}>
-      <Cabecalho titulo="Minhas propriedades" subtitulo={propriedades.length > 0 ? 'Toque em uma para ver talhões e gastos' : undefined} />
+      <Cabecalho voltar={false} grande titulo="Minhas propriedades" subtitulo={propriedades.length > 0 ? 'Toque em uma para ver talhões e gastos' : undefined} />
 
       {carregando ? (
-        <Carregando />
+        <ListaEsqueleto />
       ) : propriedades.length === 0 ? (
         <EstadoVazio
           icone="map"
@@ -64,7 +64,7 @@ export default function Propriedades() {
         <FlatList
           data={propriedades}
           keyExtractor={(item) => item.id!}
-          contentContainerStyle={{ paddingBottom: 120 }}
+          contentContainerStyle={{ paddingBottom: 96 }}
           showsVerticalScrollIndicator={false}
           refreshing={atualizando}
           onRefresh={handleAtualizar}
@@ -73,10 +73,11 @@ export default function Propriedades() {
               titulo={item.nome}
               subtitulo={`${item.localizacao} · ${item.areaTotal} ha`}
               onPress={() => navigation.navigate('PropriedadeDetalhe', { propriedadeId: item.id! })}
+              icone="map"
               esquerda={
                 item.imagemUrl ? (
-                  <Image source={{ uri: item.imagemUrl }} style={{ width: 52, height: 52, borderRadius: 8 }} />
-                ) : null
+                  <Image source={{ uri: item.imagemUrl }} style={{ width: 52, height: 52, borderRadius: 12 }} />
+                ) : undefined
               }
             />
           )}
@@ -84,7 +85,7 @@ export default function Propriedades() {
       )}
 
       {propriedades.length > 0 && (
-        <BotaoFlutuante icone="plus" titulo="Nova propriedade" onPress={() => navigation.navigate('PropriedadeForm')} />
+        <BotaoFlutuante naAba icone="plus" titulo="Nova propriedade" onPress={() => navigation.navigate('PropriedadeForm')} />
       )}
     </Tela>
   );

@@ -10,7 +10,7 @@ import { listarTalhoes, Talhao } from '../Services/talhoes';
 import { enviarNotaFiscal } from '../Services/imagens';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, Cabecalho, Campo, Cartao, Chip, Rotulo, Seletor, Tela, TelaCarregando } from '../Components/ui';
+import { Botao, Cabecalho, Campo, Cartao, Chip, Rotulo, Seletor, Tela, TelaCarregando, toast, confirmar } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 const CATEGORIAS: { valor: CategoriaDespesa; label: string }[] = [
@@ -34,6 +34,7 @@ export default function DespesaForm() {
   const [categoria, setCategoria] = useState<CategoriaDespesa>('insumo');
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
+  const [erros, setErros] = useState<{ valor?: string; descricao?: string }>({});
   const [carregando, setCarregando] = useState(modoEdicao);
   const [salvando, setSalvando] = useState(false);
   const [notaLocal, setNotaLocal] = useState<string | null>(null);
@@ -65,11 +66,11 @@ export default function DespesaForm() {
         if (d.recorrenciaMeses) setMeses(d.recorrenciaMeses);
         if (d.talhaoId) setTalhaoSel(d.talhaoId);
       } else {
-        Alert.alert('Erro', 'Despesa não encontrada.');
+        toast.erro('Despesa não encontrada.');
         navigation.goBack();
       }
     } catch (e) {
-      Alert.alert('Erro', mensagemErro(e, 'Não foi possível carregar a despesa.'));
+      toast.erro(mensagemErro(e, 'Não foi possível carregar a despesa.'));
     } finally {
       setCarregando(false);
     }
@@ -78,7 +79,7 @@ export default function DespesaForm() {
   async function handleEscolherNota() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Atenção', 'Permissão de galeria necessária.');
+      toast.erro('Permissão de galeria necessária.');
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -94,17 +95,11 @@ export default function DespesaForm() {
 
   function handleRemoverNota() {
     if (notaUrlExistente) {
-      Alert.alert('Remover nota fiscal', 'Tem certeza que deseja remover a nota fiscal anexada a esta despesa?', [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: () => {
+      confirmar({ titulo: 'Remover nota fiscal', texto: 'Tem certeza que deseja remover a nota fiscal anexada a esta despesa?', confirmar: 'Remover' }).then(async (ok) => {
+      if (!ok) return;
             setNotaLocal(null);
             setNotaUrlExistente(null);
-          },
-        },
-      ]);
+    });
     } else {
       setNotaLocal(null);
       setNotaUrlExistente(null);
@@ -112,21 +107,18 @@ export default function DespesaForm() {
   }
 
   const handleSalvar = async () => {
-    if (!valor.trim()) {
-      Alert.alert('Falta o valor', 'Informe quanto custou, por exemplo 150,50.');
-      return;
-    }
     const valorNum = parseFloat(valor.replace(',', '.'));
-    if (isNaN(valorNum) || !isFinite(valorNum) || valorNum <= 0) {
-      Alert.alert('Valor inválido', 'Digite só números, por exemplo 150,50.');
-      return;
-    }
-    if (!descricao.trim()) {
-      Alert.alert('Falta a descrição', 'Escreva com o que foi gasto, por exemplo "Adubo".');
+    const novosErros: typeof erros = {};
+    if (!valor.trim()) novosErros.valor = 'Informe quanto custou, por exemplo 150,50.';
+    else if (isNaN(valorNum) || !isFinite(valorNum) || valorNum <= 0) novosErros.valor = 'Digite só números, por exemplo 150,50.';
+    if (!descricao.trim()) novosErros.descricao = 'Escreva com o que foi gasto, por exemplo "Adubo".';
+    setErros(novosErros);
+    if (Object.keys(novosErros).length > 0) {
+      toast.erro('Confira os campos em vermelho.');
       return;
     }
     if (!propriedadeId) {
-      Alert.alert('Erro', 'Propriedade não informada.');
+      toast.erro('Propriedade não informada.');
       return;
     }
 
@@ -145,7 +137,7 @@ export default function DespesaForm() {
           dados.notaFiscalUri = url;
         }
         await atualizarDespesa(despesaId!, dados);
-        Alert.alert('Sucesso', 'Despesa atualizada!');
+        toast.sucesso('Despesa atualizada!');
       } else {
         const base = new Date();
         const totalMeses = recorrente ? meses : 1;
@@ -173,7 +165,7 @@ export default function DespesaForm() {
             await atualizarDespesa(id, { notaFiscalUri: url } as any);
           }
         }
-        Alert.alert('Sucesso', recorrente ? `Despesas criadas para ${totalMeses} meses!` : 'Despesa cadastrada!');
+        toast.sucesso(recorrente ? `Despesas criadas para ${totalMeses} meses!` : 'Despesa cadastrada!');
       }
       navigation.goBack();
     } catch (error: any) {
@@ -181,7 +173,7 @@ export default function DespesaForm() {
       const fallback = progresso && progresso.atual > 1
         ? `Não foi possível salvar. ${progresso.atual - 1} de ${progresso.total} parcelas já foram criadas — confira a lista antes de tentar novamente.`
         : 'Não foi possível salvar.';
-      Alert.alert('Erro', mensagemErro(error, fallback));
+      toast.erro(mensagemErro(error, fallback));
     } finally {
       setSalvando(false);
       setProgresso(null);
@@ -207,20 +199,27 @@ export default function DespesaForm() {
           />
 
           <Campo
-            rotulo="Quanto custou? (R$)"
-            icone="dollar-sign"
+            rotulo="Quanto custou?"
+            prefixo="R$"
             value={valor}
-            onChangeText={setValor}
-            placeholder="Ex.: 150,50"
+            onChangeText={(v) => {
+              setValor(v);
+              setErros((e) => ({ ...e, valor: undefined }));
+            }}
+            placeholder="150,50"
             keyboardType="numeric"
-            erro={erroValor}
+            erro={erros.valor ?? erroValor}
             ajuda="Use vírgula para os centavos."
           />
 
           <Campo
             rotulo="Com o que foi gasto?"
             value={descricao}
-            onChangeText={setDescricao}
+            onChangeText={(v) => {
+              setDescricao(v);
+              setErros((e) => ({ ...e, descricao: undefined }));
+            }}
+            erro={erros.descricao}
             placeholder="Ex.: Adubo NPK, diária do trator"
             maxLength={120}
           />
