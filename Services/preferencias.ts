@@ -8,6 +8,8 @@ export interface Preferencias {
   modoEscuro: boolean;
   /** Pasta (URI do Android) onde as planilhas são salvas ao tocar em "Baixar" */
   pastaPlanilha?: string;
+  /** Esconde os valores dos cartões de gasto (botão de olho) */
+  ocultarValores?: boolean;
 }
 
 const PADRAO: Preferencias = {

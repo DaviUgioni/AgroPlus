@@ -134,7 +134,8 @@ const temaNavegacao = (escuro: boolean) => {
 // seguem o modo escolhido, e o fundo da janela não pisca branco nas transições.
 function mudarModo(escuro: boolean) {
   aplicarModo(escuro);
-  Appearance.setColorScheme(escuro ? 'dark' : 'light');
+  // Não existe no react-native-web
+  Appearance.setColorScheme?.(escuro ? 'dark' : 'light');
   SystemUI.setBackgroundColorAsync(cores.begeClaro).catch(() => {});
 }
 

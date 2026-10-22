@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { cores } from '../tamagui.config';
-import { Cabecalho, Cartao, Tela } from '../Components/ui';
+import { Cabecalho, Cartao, Corpo, Tela } from '../Components/ui';
 
 const PERGUNTAS = [
   {
@@ -80,15 +80,15 @@ export default function Ajuda() {
                   accessibilityRole="button"
                   accessibilityState={{ expanded: estaAberta }}
                 >
-                  <Text flex={1} fontSize={15} fontWeight="600" color={estaAberta ? 'verde' : 'texto'}>
+                  <Corpo flex={1} fontWeight="600" color={estaAberta ? 'verde' : 'texto'}>
                     {p.pergunta}
-                  </Text>
+                  </Corpo>
                   <Feather name={estaAberta ? 'chevron-up' : 'chevron-down'} size={20} color={cores.textoSec} />
                 </XStack>
                 {estaAberta && (
-                  <Text fontSize={15} lineHeight="23px" color="texto" paddingHorizontal={16} paddingBottom={16}>
+                  <Corpo lineHeight="23px" paddingHorizontal={16} paddingBottom={16}>
                     {p.resposta}
-                  </Text>
+                  </Corpo>
                 )}
               </YStack>
             );

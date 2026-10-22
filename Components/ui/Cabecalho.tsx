@@ -20,7 +20,7 @@ export default function Cabecalho({ titulo, subtitulo, voltar = true, direita, g
     <XStack alignItems="center" gap={12} marginTop={12} marginBottom={16}>
       {voltar ? <BotaoVoltar /> : null}
       <YStack flex={1}>
-        <Titulo numberOfLines={2} fontSize={grande ? 28 : 22} fontWeight={grande ? '800' : '700'}>
+        <Titulo numberOfLines={2} tamanho={grande ? 'grande' : undefined} fontWeight={grande ? undefined : '700'}>
           {titulo}
         </Titulo>
         {subtitulo ? <Subtitulo numberOfLines={1}>{subtitulo}</Subtitulo> : null}

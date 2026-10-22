@@ -9,6 +9,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
+import { invalidarResumo } from './cacheResumo';
 
 export interface Plantio {
   id?: string;
@@ -29,6 +30,7 @@ export async function criarPlantio(plantio: Omit<Plantio, 'id' | 'criadoEm'>) {
     ...plantio,
     criadoEm: Timestamp.now(),
   });
+  invalidarResumo();
   return docRef.id;
 }
 
@@ -42,6 +44,7 @@ export async function listarPlantiosPorPropriedade(propriedadeId: string): Promi
 export async function excluirPlantio(id: string) {
   const ref = doc(db, 'plantios', id);
   await deleteDoc(ref);
+  invalidarResumo();
 }
 
 export interface EstimativaColheita {

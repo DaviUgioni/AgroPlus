@@ -82,7 +82,7 @@ export default function Seletor<T extends string | number>({
         navigationBarTranslucent
         onRequestClose={() => setAberto(false)}
       >
-        <YStack flex={1} justifyContent="flex-end" backgroundColor="rgba(0, 0, 0, 0.35)">
+        <YStack flex={1} justifyContent="flex-end" backgroundColor="overlay">
           {/* Toque fora da folha fecha o seletor */}
           <YStack
             position="absolute"

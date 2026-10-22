@@ -4,14 +4,14 @@ import { Alert, Modal, ScrollView, Switch, KeyboardAvoidingView, Platform } from
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { signOut } from 'firebase/auth';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
 import appConfig from '../app.json';
-import { Botao, Cabecalho, Campo, Cartao, Dica, Tela, TituloSecao, toast, confirmar } from '../Components/ui';
+import { Botao, Cabecalho, Campo, Cartao, Corpo, Dica, Legenda, Tela, Titulo, TituloSecao, toast, confirmar } from '../Components/ui';
 import { alterarNome, enviarLinkTrocaSenha, excluirConta, nomeDoUsuario } from '../Services/conta';
 import { lerPreferencias, salvarPreferencia } from '../Services/preferencias';
 import {
@@ -65,13 +65,11 @@ function Opcao({
         <Feather name={icone} size={18} color={cor} />
       </YStack>
       <YStack flex={1}>
-        <Text fontSize={15} fontWeight="600" color={cor === cores.erro ? 'erro' : 'texto'}>
+        <Corpo fontWeight="600" color={cor === cores.erro ? 'erro' : 'texto'}>
           {titulo}
-        </Text>
+        </Corpo>
         {descricao ? (
-          <Text fontSize={13} color="textoSec" marginTop={2}>
-            {descricao}
-          </Text>
+          <Legenda marginTop={2}>{descricao}</Legenda>
         ) : null}
       </YStack>
       {direita ?? (onPress ? <Feather name="chevron-right" size={20} color={cores.textoTerc} /> : null)}
@@ -259,22 +257,16 @@ export default function Configuracoes() {
         <Cartao gap={14}>
           <XStack alignItems="center" gap={14}>
             <YStack width={56} height={56} borderRadius="full" backgroundColor="verdeDestaque" alignItems="center" justifyContent="center">
-              <Text fontSize={24} fontWeight="700" color="sobreVerde">
+              <Titulo fontSize={24} fontWeight="700" color="sobreVerde">
                 {nomeExibido.charAt(0).toUpperCase()}
-              </Text>
+              </Titulo>
             </YStack>
             <YStack flex={1}>
-              <Text fontSize={18} fontWeight="700" color="texto" numberOfLines={1}>
+              <Corpo fontSize={18} fontWeight="700" numberOfLines={1}>
                 {nomeExibido}
-              </Text>
-              <Text fontSize={13} color="textoSec" numberOfLines={1}>
-                {usuario?.email}
-              </Text>
-              {membroDesde ? (
-                <Text fontSize={13} color="textoSec">
-                  Usa o AgroPlus desde {membroDesde}
-                </Text>
-              ) : null}
+              </Corpo>
+              <Legenda numberOfLines={1}>{usuario?.email}</Legenda>
+              {membroDesde ? <Legenda>Usa o AgroPlus desde {membroDesde}</Legenda> : null}
             </YStack>
           </XStack>
 
@@ -344,12 +336,10 @@ export default function Configuracoes() {
 
         <Secao titulo="Planilha do Excel">
           <YStack padding={16} gap={4}>
-            <Text fontSize={15} fontWeight="600" color="texto">
-              Relatório completo da produção
-            </Text>
-            <Text fontSize={13} color="textoSec">
+            <Corpo fontWeight="600">Relatório completo da produção</Corpo>
+            <Legenda>
               5 abas: resumo, despesas, gastos por mês, plantios e propriedades com talhões. Sempre com os dados de agora.
-            </Text>
+            </Legenda>
           </YStack>
           <Opcao
             icone="download"
@@ -387,7 +377,7 @@ export default function Configuracoes() {
             descricao="Respostas para as dúvidas mais comuns"
             onPress={() => navigation.navigate('Ajuda')}
           />
-          <Opcao icone="info" titulo="Versão do app" direita={<Text fontSize={14} color="textoSec">{appConfig.expo.version}</Text>} />
+          <Opcao icone="info" titulo="Versão do app" direita={<Legenda fontSize={14}>{appConfig.expo.version}</Legenda>} />
         </Secao>
 
         {__DEV__ && (
@@ -454,7 +444,7 @@ export default function Configuracoes() {
         onRequestClose={fecharExclusao}
       >
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-          <YStack flex={1} justifyContent="flex-end" backgroundColor="rgba(0, 0, 0, 0.4)">
+          <YStack flex={1} justifyContent="flex-end" backgroundColor="overlay">
             <YStack position="absolute" top={0} left={0} right={0} bottom={0} onPress={fecharExclusao} />
             <YStack
               backgroundColor="branco"
@@ -464,9 +454,9 @@ export default function Configuracoes() {
               paddingBottom={insets.bottom + 20}
               gap={12}
             >
-              <Text fontSize={20} fontWeight="700" color="texto">
+              <Corpo fontSize={20} fontWeight="700">
                 Excluir conta
-              </Text>
+              </Corpo>
               <Dica tom="alerta" icone="alert-triangle">
                 Isso apaga para sempre sua conta e todas as propriedades, talhões, plantios e despesas. Não dá para
                 desfazer. Se quiser guardar seus gastos, exporte a planilha antes.
@@ -484,9 +474,7 @@ export default function Configuracoes() {
                 disabled={!!etapaExclusao}
               />
               {etapaExclusao ? (
-                <Text fontSize={13} color="textoSec">
-                  {etapaExclusao}
-                </Text>
+                <Legenda>{etapaExclusao}</Legenda>
               ) : null}
               <XStack gap={8} marginTop={4}>
                 <Botao flex={1} variante="contorno" titulo="Cancelar" disabled={!!etapaExclusao} onPress={fecharExclusao} />

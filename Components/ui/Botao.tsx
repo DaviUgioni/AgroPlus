@@ -23,7 +23,7 @@ const Moldura = styled(XStack, {
   minHeight: 52,
   paddingVertical: 14,
   paddingHorizontal: 20,
-  animation: 'quick',
+  transition: 'quick',
   scale: '1 press:0.97',
 
   variants: {

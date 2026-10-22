@@ -7,10 +7,10 @@ import * as Location from 'expo-location';
 import { useNavigation, useRoute, useFocusEffect, RouteProp, NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { Spinner, Text, XStack, YStack } from 'tamagui';
+import { Spinner, XStack, YStack } from 'tamagui';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, toast } from '../Components/ui';
+import { Botao, Corpo, Legenda, toast } from '../Components/ui';
 import { useModo } from '../Components/ModoContext';
 import { ESTILO_MAPA_ESCURO } from '../Components/estiloMapaEscuro';
 import { mensagemErro } from '../Services/erros';
@@ -162,12 +162,8 @@ export default function MapaSelecao() {
       >
         <Botao variante="contorno" tamanho="sm" titulo="Cancelar" onPress={() => navigation.goBack()} />
         <YStack flex={1} alignItems="center">
-          <Text fontSize={15} fontWeight="700" color="texto">
-            Selecionar localização
-          </Text>
-          <Text fontSize={13} color="textoSec" marginTop={1}>
-            Toque no mapa ou arraste o pino
-          </Text>
+          <Corpo fontWeight="700">Selecionar localização</Corpo>
+          <Legenda marginTop={1}>Toque no mapa ou arraste o pino</Legenda>
         </YStack>
         <Botao tamanho="sm" titulo="Confirmar" disabled={!localizacaoSelecionada} onPress={handleConfirmar} />
       </XStack>
@@ -211,7 +207,7 @@ export default function MapaSelecao() {
           left={12}
           right={12}
           bottom={80 + insets.bottom}
-          backgroundColor="rgba(28, 28, 26, 0.9)"
+          backgroundColor="faixaMapa"
           borderRadius="lg"
           paddingVertical={10}
           paddingHorizontal={14}
@@ -220,9 +216,9 @@ export default function MapaSelecao() {
           gap={8}
         >
           <Feather name="map-pin" size={14} color={cores.sobreVerde} />
-          <Text fontSize={13} fontWeight="500" color="sobreVerde" textAlign="center">
+          <Legenda fontWeight="500" color="sobreVerde" textAlign="center">
             Toque no mapa para selecionar • Arraste o pino para ajustar
-          </Text>
+          </Legenda>
         </XStack>
       )}
 
@@ -237,31 +233,29 @@ export default function MapaSelecao() {
           borderWidth={1}
           borderColor="borda"
           padding={14}
-          boxShadow="0 4px 12px rgba(0, 0, 0, 0.12)"
+          boxShadow={`0 4px 12px ${cores.sombra}`}
         >
           <XStack justifyContent="space-between" alignItems="center" marginBottom={6}>
-            <Text fontSize={13} fontWeight="700" color="verde" textTransform="uppercase" letterSpacing={0.5}>
+            <Legenda fontWeight="700" color="verde" textTransform="uppercase" letterSpacing={0.5}>
               Localização selecionada
-            </Text>
+            </Legenda>
             <XStack backgroundColor="verdeSuave" paddingHorizontal={8} paddingVertical={3} borderRadius="lg" gap={4} alignItems="center">
               <Feather name="move" size={10} color={cores.verde} />
-              <Text fontSize={13} fontWeight="600" color="verde">
+              <Legenda fontWeight="600" color="verde">
                 Pino arrastável
-              </Text>
+              </Legenda>
             </XStack>
           </XStack>
           <YStack minHeight={40} justifyContent="center">
             {carregandoEndereco ? (
               <Spinner size="small" color="verde" alignSelf="flex-start" />
             ) : (
-              <Text fontSize={13} color="texto" lineHeight="18px" numberOfLines={3}>
+              <Corpo fontSize={14} lineHeight="18px" numberOfLines={3}>
                 {enderecoAtual}
-              </Text>
+              </Corpo>
             )}
           </YStack>
-          <Text
-            fontSize={13}
-            color="textoSec"
+          <Legenda
             marginTop={8}
             fontFamily="monospace"
             backgroundColor="begeClaro"
@@ -271,7 +265,7 @@ export default function MapaSelecao() {
             alignSelf="flex-start"
           >
             {localizacaoSelecionada.latitude.toFixed(6)}, {localizacaoSelecionada.longitude.toFixed(6)}
-          </Text>
+          </Legenda>
         </YStack>
       )}
 
@@ -284,7 +278,7 @@ export default function MapaSelecao() {
         icone="crosshair"
         titulo="Usar minha localização"
         carregando={locationLoading}
-        boxShadow="0 2px 6px rgba(0, 0, 0, 0.1)"
+        boxShadow={`0 2px 6px ${cores.sombra}`}
         onPress={handleMinhaLocalizacao}
       />
     </SafeAreaView>

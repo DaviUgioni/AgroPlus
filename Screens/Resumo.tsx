@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, RefreshControl } from 'react-native';
 import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { carregarResumo, formatarMoeda, DadosResumo } from '../Services/resumo';
 import { estimativaColheita, textoEstimativa } from '../Services/plantios';
@@ -12,14 +12,20 @@ import { cores } from '../tamagui.config';
 import {
   BarraProgresso,
   Botao,
+  BotaoOlho,
   Cabecalho,
   Cartao,
   Chip,
+  Corpo,
   EstadoVazio,
   GraficoColunas,
+  Legenda,
   ListaEsqueleto,
   Tela,
+  Titulo,
+  TituloSecao,
   toast,
+  Oculto,
 } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
@@ -57,7 +63,8 @@ export default function Resumo() {
 
     try {
       if (!opts?.silent) setCarregando(true);
-      setDados(await carregarResumo(userId));
+      // Puxar para atualizar (silent) ignora o cache
+      setDados(await carregarResumo(userId, opts?.silent));
     } catch (error) {
       console.log('Erro ao carregar resumo:', error);
       toast.erro(mensagemErro(error, 'Não foi possível carregar o resumo.'));
@@ -179,63 +186,57 @@ export default function Resumo() {
             gap={4}
             onPress={() => navigation.navigate('ResumoDespesas', { periodo: periodo === 'ano' ? 'ano' : 'mes' })}
             accessibilityRole="button"
-            accessibilityLabel={`Gasto ${nomePeriodo}: ${formatarMoeda(calculos.gasto)}. Toque para ver detalhes`}
           >
             <XStack alignItems="center" justifyContent="space-between">
-              <Text fontSize={14} fontWeight="600" color="sobreVerdeSuave">
+              <Legenda fontWeight="600" color="sobreVerdeSuave">
                 Gasto {periodo === 'tudo' ? nomePeriodo : `em ${nomePeriodo}`}
-              </Text>
-              <Feather name="chevron-right" size={20} color={cores.sobreVerdeSuave} />
+              </Legenda>
+              <XStack alignItems="center" gap={4}>
+                <BotaoOlho />
+                <Feather name="chevron-right" size={20} color={cores.sobreVerdeSuave} />
+              </XStack>
             </XStack>
-            <Text fontSize={34} fontWeight="800" color="sobreVerde" numberOfLines={1} adjustsFontSizeToFit>
-              {formatarMoeda(calculos.gasto)}
-            </Text>
+            <Titulo tamanho="destaque" color="sobreVerde" numberOfLines={1} adjustsFontSizeToFit>
+              <Oculto>{formatarMoeda(calculos.gasto)}</Oculto>
+            </Titulo>
             {variacao ? (
               <XStack alignItems="center" gap={6}>
                 <Feather name={variacao.subiu ? 'trending-up' : 'trending-down'} size={16} color={cores.sobreVerde} />
-                <Text fontSize={14} fontWeight="700" color="sobreVerde">
+                <Corpo fontWeight="700" color="sobreVerde">
                   {variacao.pct === 0
                     ? `Igual a ${calculos.rotuloAnterior}`
                     : `${variacao.subiu ? 'Subiu' : 'Caiu'} ${variacao.pct}% em relação a ${calculos.rotuloAnterior}`}
-                </Text>
+                </Corpo>
               </XStack>
             ) : periodo !== 'tudo' ? (
-              <Text fontSize={14} color="sobreVerdeSuave">
-                Sem gastos em {calculos.rotuloAnterior} para comparar
-              </Text>
+              <Legenda color="sobreVerdeSuave">Sem gastos em {calculos.rotuloAnterior} para comparar</Legenda>
             ) : null}
           </Cartao>
 
           <XStack gap={12} marginTop={12}>
             <Cartao flex={1} gap={2}>
               <Feather name="maximize" size={20} color={cores.verde} />
-              <Text fontSize={22} fontWeight="800" color="texto" marginTop={6} numberOfLines={1} adjustsFontSizeToFit>
+              <Titulo fontSize={22} fontWeight="800" marginTop={6} numberOfLines={1} adjustsFontSizeToFit>
                 {custoPorHa !== null ? formatarMoeda(custoPorHa) : '–'}
-              </Text>
-              <Text fontSize={14} color="textoSec">
-                por hectare ({dados.areaTotal.toLocaleString('pt-BR')} ha)
-              </Text>
+              </Titulo>
+              <Legenda>por hectare ({dados.areaTotal.toLocaleString('pt-BR')} ha)</Legenda>
             </Cartao>
             <Cartao flex={1} interativo gap={2} onPress={() => navigation.navigate('Plantios')} accessibilityRole="button">
               <Feather name="feather" size={20} color={cores.verde} />
-              <Text fontSize={22} fontWeight="800" color="texto" marginTop={6}>
+              <Titulo fontSize={22} fontWeight="800" marginTop={6}>
                 {dados.plantiosAtivos}
-              </Text>
-              <Text fontSize={14} color="textoSec">
-                {dados.plantiosAtivos === 1 ? 'plantio ativo' : 'plantios ativos'}
-              </Text>
+              </Titulo>
+              <Legenda>{dados.plantiosAtivos === 1 ? 'plantio ativo' : 'plantios ativos'}</Legenda>
             </Cartao>
           </XStack>
 
           {/* Gasto mês a mês */}
           <Cartao marginTop={12} gap={10}>
             <YStack>
-              <Text fontSize={14} fontWeight="700" color="texto">
-                Gasto por mês em {ano}
-              </Text>
-              <Text fontSize={13} color="textoSec" marginTop={2}>
+              <Corpo fontWeight="700">Gasto por mês em {ano}</Corpo>
+              <Legenda marginTop={2}>
                 {MESES[mesGrafico].charAt(0).toUpperCase() + MESES[mesGrafico].slice(1)}: {formatarMoeda(calculos.porMes[mesGrafico])}
-              </Text>
+              </Legenda>
             </YStack>
             <GraficoColunas
               altura={96}
@@ -249,26 +250,22 @@ export default function Resumo() {
           {calculos.colheitas.length > 0 ? (
             <Cartao marginTop={12} gap={14}>
               <XStack alignItems="center" justifyContent="space-between">
-                <Text fontSize={13} fontWeight="700" color="textoSec" textTransform="uppercase" letterSpacing={0.6}>
-                  Próximas colheitas
-                </Text>
-                <Text fontSize={14} fontWeight="700" color="verde" onPress={() => navigation.navigate('ResumoColheitas')} accessibilityRole="button">
+                <TituloSecao marginBottom={0}>Próximas colheitas</TituloSecao>
+                <Legenda fontWeight="700" color="verde" onPress={() => navigation.navigate('ResumoColheitas')} accessibilityRole="button" hitSlop={14}>
                   Ver todas
-                </Text>
+                </Legenda>
               </XStack>
               {calculos.colheitas.slice(0, 4).map((c) => (
                 <YStack key={c.id} gap={6}>
                   <XStack justifyContent="space-between" alignItems="baseline" gap={8}>
-                    <Text flex={1} fontSize={15} fontWeight="700" color="texto" numberOfLines={1}>
+                    <Corpo flex={1} fontWeight="700" numberOfLines={1}>
                       {c.titulo}
-                    </Text>
-                    <Text fontSize={13} fontWeight="700" color={c.pronto ? 'alerta' : 'verde'}>
+                    </Corpo>
+                    <Legenda fontWeight="700" color={c.pronto ? 'alerta' : 'verde'}>
                       {c.texto}
-                    </Text>
+                    </Legenda>
                   </XStack>
-                  <Text fontSize={13} color="textoSec" numberOfLines={1}>
-                    {c.local}
-                  </Text>
+                  <Legenda numberOfLines={1}>{c.local}</Legenda>
                   <BarraProgresso valor={c.progresso} cor={c.pronto ? 'alerta' : 'verdeDestaque'} />
                 </YStack>
               ))}

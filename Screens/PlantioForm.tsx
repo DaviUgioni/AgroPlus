@@ -7,9 +7,9 @@ import { listarTalhoes, Talhao } from '../Services/talhoes';
 import { TIPOS_PLANTIO, buscarTipoPlantio } from '../constants/plantios';
 import { RootStackParamList } from '../App';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { cores } from '../tamagui.config';
-import { Botao, Cabecalho, Cartao, Seletor, Tela, toast } from '../Components/ui';
+import { Botao, Cabecalho, Cartao, Corpo, Legenda, Seletor, Tela, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type PlantioFormRouteProp = RouteProp<RootStackParamList, 'PlantioForm'>;
@@ -97,12 +97,8 @@ export default function PlantioForm() {
                   <Feather name="calendar" size={18} color={cores.verde} />
                 </YStack>
                 <YStack flex={1}>
-                  <Text fontSize={13} color="textoSec">
-                    Data do plantio
-                  </Text>
-                  <Text fontSize={15} fontWeight="600" color="texto">
-                    Hoje, {formatarData(new Date())}
-                  </Text>
+                  <Legenda>Data do plantio</Legenda>
+                  <Corpo fontWeight="600">Hoje, {formatarData(new Date())}</Corpo>
                 </YStack>
               </XStack>
               <XStack gap={12} alignItems="center">
@@ -110,17 +106,15 @@ export default function PlantioForm() {
                   <Feather name="sun" size={18} color={cores.sobreVerde} />
                 </YStack>
                 <YStack flex={1}>
-                  <Text fontSize={13} color="textoSec">
-                    Colheita prevista
-                  </Text>
-                  <Text fontSize={15} fontWeight="700" color="verde">
+                  <Legenda>Colheita prevista</Legenda>
+                  <Corpo fontWeight="700" color="verde">
                     {formatarData(dataColheita)}
-                  </Text>
+                  </Corpo>
                 </YStack>
               </XStack>
-              <Text fontSize={13} color="textoSec">
+              <Legenda>
                 Estimativa média para {tipoAtual.nome.toLowerCase()}. Pode variar com clima e manejo.
-              </Text>
+              </Legenda>
             </Cartao>
           )}
 

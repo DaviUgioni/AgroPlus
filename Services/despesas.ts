@@ -12,6 +12,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
+import { invalidarResumo } from './cacheResumo';
 
 export type CategoriaDespesa = 'insumo' | 'mao_de_obra' | 'maquinario' | 'outros';
 
@@ -44,17 +45,20 @@ export async function criarDespesa(despesa: Omit<Despesa, 'id' | 'criadoEm'>) {
     talhaoId: despesa.talhaoId ?? null,
     criadoEm: Timestamp.now(),
   });
+  invalidarResumo();
   return docRef.id;
 }
 
 export async function atualizarDespesa(id: string, despesa: Partial<Despesa>) {
   const despesaRef = doc(db, 'despesas', id);
   await updateDoc(despesaRef, despesa);
+  invalidarResumo();
 }
 
 export async function excluirDespesa(id: string) {
   const despesaRef = doc(db, 'despesas', id);
   await deleteDoc(despesaRef);
+  invalidarResumo();
   try {
     const { excluirNotaFiscal } = await import('./imagens');
     excluirNotaFiscal(id);

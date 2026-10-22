@@ -9,7 +9,7 @@ export const Cartao = styled(YStack, {
   borderWidth: 1,
   borderColor: 'borda',
   padding: 16,
-  animation: 'quick',
+  transition: 'quick',
 
   variants: {
     tom: {

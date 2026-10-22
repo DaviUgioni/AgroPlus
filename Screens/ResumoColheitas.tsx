@@ -3,13 +3,13 @@ import { FlatList, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { Text, YStack } from 'tamagui';
+import { YStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades } from '../Services/propriedades';
 import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plantio } from '../Services/plantios';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Cabecalho, EstadoVazio, IconeLista, ItemLista, ListaEsqueleto, Tela, toast } from '../Components/ui';
+import { Cabecalho, EstadoVazio, IconeLista, ItemLista, Legenda, ListaEsqueleto, Tela, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type NavProp = NavigationProp<RootStackParamList>;
@@ -103,9 +103,9 @@ export default function ResumoColheitas() {
               }
               esquerda={<IconeLista icone="feather" tom={item.pronto ? 'alerta' : 'verde'} />}
             >
-              <Text fontSize={13} fontWeight="600" color={item.pronto ? 'alerta' : 'verde'} marginTop={4}>
+              <Legenda fontWeight="600" color={item.pronto ? 'alerta' : 'verde'} marginTop={4}>
                 {item.texto}
-              </Text>
+              </Legenda>
             </ItemLista>
           )}
         />

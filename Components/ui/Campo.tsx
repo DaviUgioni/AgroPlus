@@ -16,7 +16,7 @@ export const CaixaCampo = styled(XStack, {
   paddingHorizontal: 14,
   minHeight: 52,
   gap: 10,
-  animation: 'quick',
+  transition: 'quick',
 
   variants: {
     // Anel suave em volta do campo ativo: destaca o foco sem mudar o tamanho da caixa

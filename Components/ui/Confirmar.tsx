@@ -54,7 +54,7 @@ export function ProvedorConfirmar({ children }: { children: ReactNode }) {
     <>
       {children}
       <Modal visible={!!opcoes} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => responder(false)}>
-        <YStack flex={1} justifyContent="flex-end" backgroundColor="rgba(0, 0, 0, 0.4)">
+        <YStack flex={1} justifyContent="flex-end" backgroundColor="overlay">
           <YStack position="absolute" top={0} left={0} right={0} bottom={0} onPress={() => responder(false)} accessibilityLabel="Fechar" />
           <YStack
             backgroundColor="branco"

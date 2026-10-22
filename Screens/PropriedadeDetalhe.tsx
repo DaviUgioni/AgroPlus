@@ -3,13 +3,13 @@ import { FlatList, Alert, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, useFocusEffect, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { buscarPropriedade, excluirPropriedade, Propriedade } from '../Services/propriedades';
 import { listarTalhoes, excluirTalhao, Talhao } from '../Services/talhoes';
 import { listarDespesasPorTalhao, totalDespesas } from '../Services/despesas';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { BarraProgresso, Botao, Cabecalho, Cartao, EstadoVazio, IconeLista, MenuAcoes, Tela, TelaCarregando, TituloSecao, confirmar, toast } from '../Components/ui';
+import { BarraProgresso, Botao, Cabecalho, Cartao, Corpo, EstadoVazio, IconeLista, Legenda, MenuAcoes, Tela, TelaCarregando, TituloSecao, confirmar, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type DetalheRouteProp = RouteProp<RootStackParamList, 'PropriedadeDetalhe'>;
@@ -31,9 +31,9 @@ function AcaoTalhao({ icone, label, onPress }: { icone: IconeFeather; label: str
       accessibilityLabel={label}
     >
       <Feather name={icone} size={18} color={cores.verde} />
-      <Text fontSize={14} fontWeight="700" color="verde" textAlign="center">
+      <Corpo fontSize={14} fontWeight="700" color="verde" textAlign="center">
         {label}
-      </Text>
+      </Corpo>
     </XStack>
   );
 }
@@ -164,12 +164,12 @@ export default function PropriedadeDetalhe() {
             {talhoes.length > 0 && (
               <Cartao tom="bege" marginBottom={16} gap={8}>
                 <XStack justifyContent="space-between">
-                  <Text fontSize={14} fontWeight="600" color="texto">
+                  <Corpo fontSize={14} fontWeight="600">
                     Área dividida em talhões
-                  </Text>
-                  <Text fontSize={14} fontWeight="700" color="verde">
+                  </Corpo>
+                  <Corpo fontSize={14} fontWeight="700" color="verde">
                     {areaUsada.toLocaleString('pt-BR')} de {propriedade.areaTotal.toLocaleString('pt-BR')} ha
-                  </Text>
+                  </Corpo>
                 </XStack>
                 <BarraProgresso valor={areaUsada / (propriedade.areaTotal || 1)} fundo="branco" />
               </Cartao>
@@ -202,12 +202,12 @@ export default function PropriedadeDetalhe() {
             <XStack alignItems="center" justifyContent="space-between" paddingVertical={10} paddingLeft={14} paddingRight={4} gap={12}>
               <IconeLista icone="grid" />
               <YStack flex={1}>
-                <Text fontSize={16} fontWeight="700" color="texto">
+                <Corpo fontSize={16} fontWeight="700">
                   {item.nome}
-                </Text>
-                <Text fontSize={13} color="textoSec" marginTop={2}>
+                </Corpo>
+                <Legenda marginTop={2}>
                   {item.area} ha · gasto {formatarMoeda(totaisPorTalhao[item.id!] ?? 0)}
-                </Text>
+                </Legenda>
               </YStack>
               <MenuAcoes
                 titulo={item.nome}
@@ -236,12 +236,8 @@ export default function PropriedadeDetalhe() {
         ListFooterComponent={
           <Cartao tom="bege" marginTop={12} gap={12}>
             <YStack>
-              <Text fontSize={15} fontWeight="600" color="texto">
-                Despesas da propriedade
-              </Text>
-              <Text fontSize={13} color="textoSec" marginTop={2}>
-                Lance gastos gerais ou consulte o histórico
-              </Text>
+              <Corpo fontWeight="600">Despesas da propriedade</Corpo>
+              <Legenda marginTop={2}>Lance gastos gerais ou consulte o histórico</Legenda>
             </YStack>
             <XStack gap={8}>
               <Botao

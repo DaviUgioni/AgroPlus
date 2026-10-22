@@ -3,14 +3,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Alert, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import * as ImagePicker from 'expo-image-picker';
 import { auth } from '../FirebaseConfig';
 import { criarPropriedade, buscarPropriedade, atualizarPropriedade, type Propriedade } from '../Services/propriedades';
 import { enviarImagemPropriedade } from '../Services/imagens';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, Cabecalho, Campo, Rotulo, Tela, TelaCarregando, toast, confirmar } from '../Components/ui';
+import { Botao, Cabecalho, Campo, Corpo, Legenda, Rotulo, Tela, TelaCarregando, toast, confirmar } from '../Components/ui';
 import { MAPA_DISPONIVEL } from '../constants/mapa';
 import { mensagemErro } from '../Services/erros';
 
@@ -276,12 +276,10 @@ export default function PropriedadeForm() {
               accessibilityRole="button"
             >
               <Feather name="image" size={24} color={cores.verde} />
-              <Text fontSize={15} fontWeight="600" color="verde">
+              <Corpo fontWeight="600" color="verde">
                 Escolher foto da galeria
-              </Text>
-              <Text fontSize={13} color="textoSec">
-                Ajuda a reconhecer a propriedade na lista
-              </Text>
+              </Corpo>
+              <Legenda>Ajuda a reconhecer a propriedade na lista</Legenda>
             </YStack>
           )}
 

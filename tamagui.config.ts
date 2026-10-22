@@ -23,6 +23,9 @@ const paletaClara = {
   erroSuave: '#FDF0EE',
   alerta: '#B7791F', // atenção que não é erro (ex.: pronto para colher)
   alertaSuave: '#FDF4E3',
+  overlay: '#00000066', // fundo escurecido atrás de modais
+  sombra: '#00000020', // sombra de cartões flutuantes
+  faixaMapa: '#1C1C1AE6', // faixa de instrução sobre o mapa
 };
 
 const paletaEscura: typeof paletaClara = {
@@ -45,12 +48,16 @@ const paletaEscura: typeof paletaClara = {
   erroSuave: '#3A1F1B',
   alerta: '#D9972F',
   alertaSuave: '#3A2D14',
+  overlay: '#000000B3',
+  sombra: '#00000066',
+  faixaMapa: '#0B0B0AE6',
 };
 
 // Cores que não mudam com o tema: texto e ícones sobre fundo verde.
 const fixas = {
   sobreVerde: '#FFFFFF',
   sobreVerdeSuave: '#EAF3DE',
+  sobreVerdeFundo: '#FFFFFF26', // véu claro sobre cartões verdes
 };
 
 let paletaAtiva = paletaClara;

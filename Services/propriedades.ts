@@ -1,6 +1,7 @@
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where, serverTimestamp, writeBatch,} from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 import { excluirImagemPropriedade } from './imagens';
+import { invalidarResumo } from './cacheResumo';
 
 export interface Propriedade {
   id?: string;
@@ -19,6 +20,7 @@ export async function criarPropriedade(dados: Omit<Propriedade, 'id'>) {
     ...dados,
     criadoEm: serverTimestamp(),
   });
+  invalidarResumo();
   return ref.id;
 }
 
@@ -39,6 +41,7 @@ export async function buscarPropriedade(id: string) {
 export async function atualizarPropriedade(id: string, dados: Partial<Omit<Propriedade, 'id'>>) {
   const ref = doc(db, 'propriedades', id);
   await updateDoc(ref, dados);
+  invalidarResumo();
 }
 
 export async function excluirPropriedade(id: string) {
@@ -67,6 +70,7 @@ export async function excluirPropriedade(id: string) {
     chunk.forEach((ref) => batch.delete(ref as any));
     await batch.commit();
   }
+  invalidarResumo();
 
   try {
     excluirImagemPropriedade(id);

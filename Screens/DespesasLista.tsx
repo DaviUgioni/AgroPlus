@@ -3,7 +3,7 @@ import { FlatList, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import {
   listarDespesasPorPropriedade,
   listarDespesasPorTalhao,
@@ -17,7 +17,7 @@ import {
 } from '../Services/despesas';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, BotaoFlutuante, Cabecalho, Cartao, EstadoVazio, GraficoColunas, ListaEsqueleto, Seletor, Tela, toast, confirmar } from '../Components/ui';
+import { Botao, BotaoFlutuante, BotaoOlho, Cabecalho, Cartao, Corpo, EstadoVazio, GraficoColunas, Legenda, ListaEsqueleto, Seletor, Tela, Titulo, toast, confirmar, Oculto } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 import { baixarPlanilha, CanceladoError, compartilharPlanilha } from '../Services/planilha';
 
@@ -153,28 +153,27 @@ export default function DespesasLista({ embutido, propriedadeId: idEmbutido }: {
   const topo = (
     <>
       <Cartao tom="verde" marginBottom={12}>
-        <Text fontSize={14} color="sobreVerdeSuave">
-          {temFiltro ? 'Total com os filtros escolhidos' : 'Total gasto até hoje'}
-        </Text>
-        <Text fontSize={28} fontWeight="700" color="sobreVerde" marginTop={2}>
-          {formatarMoeda(total)}
-        </Text>
+        <XStack alignItems="center" justifyContent="space-between">
+          <Corpo color="sobreVerdeSuave" flexShrink={1}>
+            {temFiltro ? 'Total com os filtros escolhidos' : 'Total gasto até hoje'}
+          </Corpo>
+          <BotaoOlho />
+        </XStack>
+        <Titulo tamanho="grande" fontWeight="700" color="sobreVerde" marginTop={2}>
+          <Oculto>{formatarMoeda(total)}</Oculto>
+        </Titulo>
         <XStack gap={10} marginTop={12}>
-          <YStack flex={1} backgroundColor="rgba(255,255,255,0.15)" borderRadius="lg" padding={10}>
-            <Text fontSize={13} color="sobreVerdeSuave">
-              Mês de {nomeMes}
-            </Text>
-            <Text fontSize={16} fontWeight="700" color="sobreVerde" marginTop={2}>
-              {formatarMoeda(totalMes)}
-            </Text>
+          <YStack flex={1} backgroundColor="sobreVerdeFundo" borderRadius="lg" padding={10}>
+            <Legenda color="sobreVerdeSuave">Mês de {nomeMes}</Legenda>
+            <Corpo fontWeight="700" color="sobreVerde" marginTop={2}>
+              <Oculto>{formatarMoeda(totalMes)}</Oculto>
+            </Corpo>
           </YStack>
-          <YStack flex={1} backgroundColor="rgba(255,255,255,0.15)" borderRadius="lg" padding={10}>
-            <Text fontSize={13} color="sobreVerdeSuave">
-              Ano de {anoAtual}
-            </Text>
-            <Text fontSize={16} fontWeight="700" color="sobreVerde" marginTop={2}>
-              {formatarMoeda(totalAno)}
-            </Text>
+          <YStack flex={1} backgroundColor="sobreVerdeFundo" borderRadius="lg" padding={10}>
+            <Legenda color="sobreVerdeSuave">Ano de {anoAtual}</Legenda>
+            <Corpo fontWeight="700" color="sobreVerde" marginTop={2}>
+              <Oculto>{formatarMoeda(totalAno)}</Oculto>
+            </Corpo>
           </YStack>
         </XStack>
       </Cartao>
@@ -182,21 +181,17 @@ export default function DespesasLista({ embutido, propriedadeId: idEmbutido }: {
       <Cartao marginBottom={12} padding={14} gap={10}>
         <XStack justifyContent="space-between" alignItems="center">
           <YStack flex={1}>
-            <Text fontSize={14} fontWeight="700" color="texto">
-              Gasto por mês em {anoAtual}
-            </Text>
-            <Text fontSize={13} color="textoSec" marginTop={2}>
+            <Corpo fontWeight="700">Gasto por mês em {anoAtual}</Corpo>
+            <Legenda marginTop={2}>
               {MESES[mesDestaque + 1]}: {formatarMoeda(gastoPorMes[mesDestaque])}
-            </Text>
+            </Legenda>
           </YStack>
           {filtroMes !== -1 ? (
-            <Text fontSize={13} fontWeight="700" color="verde" onPress={() => setFiltroMes(-1)} accessibilityRole="button">
+            <Legenda fontWeight="700" color="verde" onPress={() => setFiltroMes(-1)} accessibilityRole="button" hitSlop={14}>
               Ver todos os meses
-            </Text>
+            </Legenda>
           ) : (
-            <Text fontSize={13} color="textoSec">
-              Toque num mês
-            </Text>
+            <Legenda>Toque num mês</Legenda>
           )}
         </XStack>
         <GraficoColunas
@@ -316,31 +311,27 @@ export default function DespesasLista({ embutido, propriedadeId: idEmbutido }: {
                       alignItems="center"
                     >
                       <Feather name="clock" size={12} color={cores.alerta} />
-                      <Text fontSize={13} fontWeight="700" color="alerta">
+                      <Legenda fontWeight="700" color="alerta">
                         Agendada · entra no total quando o mês chegar
-                      </Text>
+                      </Legenda>
                     </XStack>
                   )}
                   <XStack justifyContent="space-between" alignItems="flex-start" gap={12}>
                     <YStack flex={1}>
-                      <Text fontSize={16} fontWeight="600" color="texto">
+                      <Corpo fontSize={16} fontWeight="600">
                         {item.descricao}
-                      </Text>
-                      <Text fontSize={13} color="textoSec" marginTop={2}>
-                        {detalhes.join(' • ')}
-                      </Text>
+                      </Corpo>
+                      <Legenda marginTop={2}>{detalhes.join(' • ')}</Legenda>
                       {item.notaFiscalUri ? (
                         <XStack alignItems="center" gap={4} marginTop={4}>
                           <Feather name="paperclip" size={13} color={cores.verde} />
-                          <Text fontSize={13} color="verde">
-                            Nota fiscal anexada
-                          </Text>
+                          <Legenda color="verde">Nota fiscal anexada</Legenda>
                         </XStack>
                       ) : null}
                     </YStack>
-                    <Text fontSize={17} fontWeight="700" color={isFutura ? 'textoTerc' : 'verde'}>
+                    <Corpo fontSize={17} fontWeight="700" color={isFutura ? 'textoTerc' : 'verde'}>
                       {formatarMoeda(item.valor)}
-                    </Text>
+                    </Corpo>
                   </XStack>
                   <XStack
                     justifyContent="flex-end"

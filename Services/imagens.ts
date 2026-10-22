@@ -1,21 +1,23 @@
 import { Paths, Directory, File } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 
-const IMAGES_DIR = new Directory(Paths.document, 'propriedades');
-const NOTAS_DIR = new Directory(Paths.document, 'notas');
+// Criadas sob demanda: instanciar Directory no carregamento do módulo quebra a versão web.
+const pastaImagens = () => new Directory(Paths.document, 'propriedades');
+const pastaNotas = () => new Directory(Paths.document, 'notas');
 
 function arquivoImagem(propriedadeId: string): File {
-  return new File(IMAGES_DIR, `${propriedadeId}.jpg`);
+  return new File(pastaImagens(), `${propriedadeId}.jpg`);
 }
 
 function arquivoNota(despesaId: string): File {
-  return new File(NOTAS_DIR, `${despesaId}.jpg`);
+  return new File(pastaNotas(), `${despesaId}.jpg`);
 }
 
 export async function enviarImagemPropriedade(uri: string, propriedadeId: string): Promise<string> {
   try {
-    if (!IMAGES_DIR.exists) {
-      IMAGES_DIR.create({ intermediates: true, idempotent: true } as any);
+    const pasta = pastaImagens();
+    if (!pasta.exists) {
+      pasta.create({ intermediates: true, idempotent: true } as any);
     }
   } catch {}
 
@@ -47,7 +49,8 @@ export function getImagemLocalUri(propriedadeId: string): string {
 
 export async function enviarNotaFiscal(uri: string, despesaId: string): Promise<string> {
   try {
-    if (!NOTAS_DIR.exists) NOTAS_DIR.create({ intermediates: true, idempotent: true } as any);
+    const pasta = pastaNotas();
+    if (!pasta.exists) pasta.create({ intermediates: true, idempotent: true } as any);
   } catch {}
   const resultado = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1000 } }], {
     compress: 0.6,

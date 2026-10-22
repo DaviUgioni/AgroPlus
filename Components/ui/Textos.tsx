@@ -7,6 +7,14 @@ export const Titulo = styled(Text, {
   fontSize: 22,
   fontWeight: '600',
   color: 'texto',
+  variants: {
+    tamanho: {
+      /** Título de tela principal (saudação, abas) */
+      grande: { fontSize: 28, fontWeight: '800' },
+      /** Valor em destaque nos cartões de total */
+      destaque: { fontSize: 34, fontWeight: '800' },
+    },
+  } as const,
 });
 
 export const Subtitulo = styled(Text, {

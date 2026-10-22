@@ -11,13 +11,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
 import FaixaMarca from '../Components/FaixaMarca';
-import { Botao, Campo, toast } from '../Components/ui';
+import { Botao, Campo, Corpo, Legenda, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type CriarContaNavigationProp = NavigationProp<RootStackParamList, 'CriarConta'>;
@@ -150,9 +150,9 @@ export default function CriarConta() {
                       borderRadius="full"
                     />
                   </YStack>
-                  <Text fontSize={13} fontWeight="600" minWidth={40} color={forca.cor}>
+                  <Legenda fontWeight="600" minWidth={40} color={forca.cor}>
                     {forca.label}
-                  </Text>
+                  </Legenda>
                 </XStack>
               ) : null}
 
@@ -175,7 +175,7 @@ export default function CriarConta() {
                 onPress={handleCriarConta}
               />
 
-              <Text
+              <Corpo
                 fontSize={14}
                 color="textoSec"
                 textAlign="center"
@@ -184,10 +184,10 @@ export default function CriarConta() {
                 onPress={() => navigation.navigate('Login')}
               >
                 Já tem conta?{' '}
-                <Text color="verde" fontWeight="600">
+                <Corpo fontSize={14} color="verde" fontWeight="600">
                   Fazer login
-                </Text>
-              </Text>
+                </Corpo>
+              </Corpo>
               </YStack>
             </YStack>
           </TouchableWithoutFeedback>

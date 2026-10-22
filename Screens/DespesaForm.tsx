@@ -4,13 +4,13 @@ import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navig
 import { Timestamp } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { criarDespesa, atualizarDespesa, buscarDespesa, CategoriaDespesa } from '../Services/despesas';
 import { listarTalhoes, Talhao } from '../Services/talhoes';
 import { enviarNotaFiscal } from '../Services/imagens';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, Cabecalho, Campo, Cartao, Chip, Rotulo, Seletor, Tela, TelaCarregando, toast, confirmar } from '../Components/ui';
+import { Botao, Cabecalho, Campo, Cartao, Chip, Corpo, Legenda, Rotulo, Seletor, Tela, TelaCarregando, toast, confirmar } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 const CATEGORIAS: { valor: CategoriaDespesa; label: string }[] = [
@@ -266,9 +266,9 @@ export default function DespesaForm() {
               accessibilityRole="button"
             >
               <Feather name="camera" size={18} color={cores.verde} />
-              <Text fontSize={14} fontWeight="600" color="verde">
+              <Corpo fontSize={14} fontWeight="600" color="verde">
                 Anexar foto
-              </Text>
+              </Corpo>
             </XStack>
           )}
 
@@ -276,12 +276,10 @@ export default function DespesaForm() {
             <Cartao marginTop={20} padding={14}>
               <XStack justifyContent="space-between" alignItems="center" gap={12}>
                 <YStack flex={1}>
-                  <Text fontSize={15} fontWeight="600" color="texto">
-                    Repetir todo mês
-                  </Text>
-                  <Text fontSize={13} color="textoSec" marginTop={2}>
+                  <Corpo fontWeight="600">Repetir todo mês</Corpo>
+                  <Legenda marginTop={2}>
                     Para gastos fixos, como salário ou aluguel. Lança o mesmo valor nos próximos meses.
-                  </Text>
+                  </Legenda>
                 </YStack>
                 <Switch
                   value={recorrente}
@@ -299,11 +297,11 @@ export default function DespesaForm() {
                     ))}
                   </XStack>
                   {valorDigitado > 0 && (
-                    <Text fontSize={13} color="textoSec" marginTop={10}>
+                    <Legenda marginTop={10}>
                       Serão lançadas {meses} despesas de{' '}
                       {valorDigitado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}, uma por mês, a
                       partir de hoje.
-                    </Text>
+                    </Legenda>
                   )}
                 </>
               )}

@@ -12,13 +12,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { Text, YStack } from 'tamagui';
+import { YStack } from 'tamagui';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, Campo, toast } from '../Components/ui';
+import { Botao, Campo, Corpo, toast } from '../Components/ui';
 import FaixaMarca from '../Components/FaixaMarca';
 import { mensagemErro } from '../Services/erros';
 import { lerPreferencias } from '../Services/preferencias';
@@ -190,7 +190,7 @@ export default function Login() {
                 />
               ) : null}
 
-              <Text
+              <Corpo
                 fontSize={14}
                 color="textoSec"
                 textAlign="center"
@@ -199,10 +199,10 @@ export default function Login() {
                 onPress={() => navigation.navigate('CriarConta')}
               >
                 Não tem conta?{' '}
-                <Text color="verde" fontWeight="600">
+                <Corpo fontSize={14} color="verde" fontWeight="600">
                   Criar conta
-                </Text>
-              </Text>
+                </Corpo>
+              </Corpo>
               </YStack>
             </YStack>
           </TouchableWithoutFeedback>

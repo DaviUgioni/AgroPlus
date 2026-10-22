@@ -3,6 +3,7 @@
 export { default as Botao, BotaoFlutuante } from './Botao';
 export { default as BarraProgresso } from './BarraProgresso';
 export type { BotaoProps, IconeFeather } from './Botao';
+export { default as BotaoIcone } from './BotaoIcone';
 export { default as Cabecalho } from './Cabecalho';
 export { default as Campo, CaixaCampo } from './Campo';
 export { Cartao } from './Cartao';
@@ -22,3 +23,4 @@ export { vibrar } from './vibrar';
 export { GraficoColunas, GraficoBarras, moedaCurta } from './Graficos';
 export { confirmar, ProvedorConfirmar } from './Confirmar';
 export { default as IconeLista } from './IconeLista';
+export { BotaoOlho, Oculto } from './ValoresOcultos';

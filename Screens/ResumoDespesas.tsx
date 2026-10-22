@@ -3,13 +3,13 @@ import { FlatList, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack } from 'tamagui';
+import { XStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades } from '../Services/propriedades';
 import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, CategoriaDespesa, LABELS_CATEGORIA } from '../Services/despesas';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Cabecalho, Cartao, Chip, EstadoVazio, GraficoBarras, ItemLista, ListaEsqueleto, Tela, TituloSecao, toast } from '../Components/ui';
+import { BotaoOlho, Cabecalho, Cartao, Chip, Corpo, EstadoVazio, GraficoBarras, ItemLista, Legenda, ListaEsqueleto, Tela, Titulo, TituloSecao, toast, Oculto } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type ResumoDespesasRouteProp = RouteProp<RootStackParamList, 'ResumoDespesas'>;
@@ -122,12 +122,13 @@ export default function ResumoDespesas() {
           ListHeaderComponent={
             <>
               <Cartao tom="verde" marginBottom={16}>
-                <Text fontSize={13} color="sobreVerdeSuave">
-                  Total {periodo === 'mes' ? 'do mês' : 'do ano'}
-                </Text>
-                <Text fontSize={28} fontWeight="700" color="sobreVerde" marginTop={2}>
-                  {formatarMoeda(total)}
-                </Text>
+                <XStack alignItems="center" justifyContent="space-between">
+                  <Legenda color="sobreVerdeSuave">Total {periodo === 'mes' ? 'do mês' : 'do ano'}</Legenda>
+                  <BotaoOlho />
+                </XStack>
+                <Titulo tamanho="grande" fontWeight="700" color="sobreVerde" marginTop={2}>
+                  <Oculto>{formatarMoeda(total)}</Oculto>
+                </Titulo>
               </Cartao>
 
               {porCategoria.length > 0 && (
@@ -151,9 +152,9 @@ export default function ResumoDespesas() {
               onPress={() => navigation.navigate('DespesasLista', { propriedadeId: item.propriedadeId })}
               direita={
                 <XStack alignItems="center" gap={6}>
-                  <Text fontSize={14} fontWeight="600" color="verde">
+                  <Corpo fontSize={14} fontWeight="600" color="verde">
                     {formatarMoeda(item.valor)}
-                  </Text>
+                  </Corpo>
                   <Feather name="chevron-right" size={18} color={cores.textoTerc} />
                 </XStack>
               }

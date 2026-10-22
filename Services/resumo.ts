@@ -3,6 +3,7 @@
 import { listarPropriedades, Propriedade } from './propriedades';
 import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, Despesa } from './despesas';
 import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plantio } from './plantios';
+import { comCacheResumo } from './cacheResumo';
 
 export interface ProximaColheita {
   propriedadeNome: string;
@@ -25,18 +26,24 @@ export interface DadosResumo {
   plantios: (Plantio & { propriedadeNome: string })[];
 }
 
-export async function carregarResumo(userId: string): Promise<DadosResumo> {
+/** `forcar` ignora o cache (ex.: puxar para atualizar). */
+export function carregarResumo(userId: string, forcar?: boolean): Promise<DadosResumo> {
+  return comCacheResumo(userId, forcar, () => buscarResumo(userId));
+}
+
+async function buscarResumo(userId: string): Promise<DadosResumo> {
   const propriedades = await listarPropriedades(userId);
   const agora = new Date();
 
-  let todasDespesas: Despesa[] = [];
-  let todosPlantios: (Plantio & { propriedadeNome: string })[] = [];
-
-  for (const prop of propriedades) {
-    const [despesas, plantios] = await Promise.all([listarDespesasPorPropriedade(prop.id!), listarPlantiosPorPropriedade(prop.id!)]);
-    todasDespesas = todasDespesas.concat(despesas);
-    todosPlantios = todosPlantios.concat(plantios.map((p) => ({ ...p, propriedadeNome: prop.nome })));
-  }
+  // Todas as propriedades em paralelo, em vez de uma de cada vez
+  const porPropriedade = await Promise.all(
+    propriedades.map(async (prop) => {
+      const [despesas, plantios] = await Promise.all([listarDespesasPorPropriedade(prop.id!), listarPlantiosPorPropriedade(prop.id!)]);
+      return { despesas, plantios: plantios.map((p) => ({ ...p, propriedadeNome: prop.nome })) };
+    })
+  );
+  const todasDespesas: Despesa[] = porPropriedade.flatMap((p) => p.despesas);
+  const todosPlantios: (Plantio & { propriedadeNome: string })[] = porPropriedade.flatMap((p) => p.plantios);
 
   // Despesas agendadas para o futuro não entram nos totais de agora
   const despesasAteAgora = todasDespesas.filter((d) => (d.data?.toMillis?.() ?? 0) <= agora.getTime());

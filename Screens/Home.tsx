@@ -4,13 +4,13 @@ import { Feather } from '@expo/vector-icons';
 import { Image, RefreshControl, ScrollView } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { nomeDoUsuario } from '../Services/conta';
 import { carregarResumo, formatarMoeda, DadosResumo } from '../Services/resumo';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, Cartao, Esqueleto, Subtitulo, Tela, Titulo } from '../Components/ui';
+import { Botao, BotaoIcone, BotaoOlho, Cartao, Corpo, EstadoVazio, Esqueleto, Legenda, Subtitulo, Tela, Titulo, TituloSecao, Oculto } from '../Components/ui';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -34,17 +34,21 @@ export default function Home() {
   const [dados, setDados] = useState<DadosResumo | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
+  const [erro, setErro] = useState(false);
   const [nome, setNome] = useState(nomeDoUsuario());
 
   async function carregar(silencioso?: boolean) {
     setNome(nomeDoUsuario()); // pode ter mudado nas Configurações
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
     try {
+      const userId = auth.currentUser?.uid;
+      if (!userId) throw new Error('Sem usuário');
       // Sem internet o Firestore pode responder só com o cache; nesse caso mostramos o que houver
-      setDados(await carregarResumo(userId));
+      // Puxar para atualizar (silencioso) ignora o cache
+      setDados(await carregarResumo(userId, silencioso));
+      setErro(false);
     } catch {
-      setDados(null);
+      // Mantém os dados anteriores, se houver; o aviso só aparece quando não há nada para mostrar
+      setErro(true);
     } finally {
       if (!silencioso) setCarregando(false);
     }
@@ -65,42 +69,25 @@ export default function Home() {
   const semPropriedades = !!dados && dados.propriedades.length === 0;
   const mes = MESES[new Date().getMonth()];
 
+  function registrarPlantio() {
+    // Com uma só propriedade vai direto ao formulário; com várias, o usuário escolhe na aba Áreas
+    const propriedades = dados?.propriedades ?? [];
+    if (propriedades.length === 1 && propriedades[0].id) navigation.navigate('PlantioForm', { propriedadeId: propriedades[0].id });
+    else navigation.navigate('Propriedades');
+  }
+
   return (
     <Tela edges={['top', 'left', 'right']}>
       <XStack alignItems="center" justifyContent="space-between" marginTop={12}>
         <XStack alignItems="center" gap={8}>
           <Image source={require('../assets/logo.png')} style={{ width: 32, height: 32 }} resizeMode="contain" />
-          <Text fontSize={20} fontWeight="800" color="verde">
+          <Corpo fontSize={20} fontWeight="800" color="verde">
             AgroPlus
-          </Text>
+          </Corpo>
         </XStack>
         <XStack gap={4}>
-          <YStack
-            width={44}
-            height={44}
-            borderRadius="full"
-            alignItems="center"
-            justifyContent="center"
-            backgroundColor="transparent press:begeClaro"
-            onPress={() => navigation.navigate('Ajuda')}
-            accessibilityRole="button"
-            accessibilityLabel="Ajuda"
-          >
-            <Feather name="help-circle" size={22} color={cores.textoSec} />
-          </YStack>
-          <YStack
-            width={44}
-            height={44}
-            borderRadius="full"
-            alignItems="center"
-            justifyContent="center"
-            backgroundColor="transparent press:begeClaro"
-            onPress={() => navigation.navigate('Configuracoes')}
-            accessibilityRole="button"
-            accessibilityLabel="Configurações"
-          >
-            <Feather name="settings" size={22} color={cores.textoSec} />
-          </YStack>
+          <BotaoIcone icone="help-circle" rotulo="Ajuda" onPress={() => navigation.navigate('Ajuda')} />
+          <BotaoIcone icone="settings" rotulo="Configurações" onPress={() => navigation.navigate('Configuracoes')} />
         </XStack>
       </XStack>
 
@@ -109,12 +96,22 @@ export default function Home() {
         contentContainerStyle={{ paddingVertical: 20, paddingBottom: 28 }}
         refreshControl={<RefreshControl refreshing={atualizando} onRefresh={atualizar} colors={[cores.verde]} tintColor={cores.verde} />}
       >
-        <Titulo fontSize={28} fontWeight="800">
+        <Titulo tamanho="grande">
           {nome ? `${saudacao()}, ${nome}!` : `${saudacao()}!`}
         </Titulo>
         <Subtitulo marginTop={4} marginBottom={20}>
           {semPropriedades ? 'Vamos configurar sua produção em 3 passos.' : 'Veja como está a sua produção hoje.'}
         </Subtitulo>
+
+        {!carregando && erro && !dados ? (
+          <EstadoVazio
+            marginTop={8}
+            icone="wifi-off"
+            titulo="Não foi possível carregar"
+            texto="Verifique a internet e tente de novo. Você também pode puxar a tela para atualizar."
+            acao={{ titulo: 'Tentar de novo', icone: 'refresh-cw', onPress: atualizar }}
+          />
+        ) : null}
 
         {carregando ? (
           <YStack gap={12}>
@@ -142,17 +139,15 @@ export default function Home() {
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Text fontSize={14} fontWeight="700" color={i === 0 ? 'sobreVerde' : 'verde'}>
+                  <Legenda fontWeight="700" color={i === 0 ? 'sobreVerde' : 'verde'}>
                     {i + 1}
-                  </Text>
+                  </Legenda>
                 </YStack>
                 <YStack flex={1}>
-                  <Text fontSize={16} fontWeight="700" color="texto">
+                  <Corpo fontSize={16} fontWeight="700">
                     {p.titulo}
-                  </Text>
-                  <Text fontSize={14} color="textoSec" marginTop={2}>
-                    {p.texto}
-                  </Text>
+                  </Corpo>
+                  <Legenda marginTop={2}>{p.texto}</Legenda>
                 </YStack>
               </XStack>
             ))}
@@ -169,20 +164,20 @@ export default function Home() {
               padding={20}
               onPress={() => navigation.navigate('ResumoDespesas', { periodo: 'mes' })}
               accessibilityRole="button"
-              accessibilityLabel={`Gasto em ${mes}: ${formatarMoeda(dados.gastoMes)}`}
             >
               <XStack alignItems="center" justifyContent="space-between">
-                <Text fontSize={14} fontWeight="600" color="sobreVerdeSuave">
+                <Legenda fontWeight="600" color="sobreVerdeSuave">
                   Gasto em {mes}
-                </Text>
-                <Feather name="chevron-right" size={20} color={cores.sobreVerdeSuave} />
+                </Legenda>
+                <XStack alignItems="center" gap={4}>
+                  <BotaoOlho />
+                  <Feather name="chevron-right" size={20} color={cores.sobreVerdeSuave} />
+                </XStack>
               </XStack>
-              <Text fontSize={34} fontWeight="800" color="sobreVerde" numberOfLines={1} adjustsFontSizeToFit>
-                {formatarMoeda(dados.gastoMes)}
-              </Text>
-              <Text fontSize={14} color="sobreVerdeSuave">
-                {formatarMoeda(dados.gastoAno)} no ano
-              </Text>
+              <Titulo tamanho="destaque" color="sobreVerde" numberOfLines={1} adjustsFontSizeToFit>
+                <Oculto>{formatarMoeda(dados.gastoMes)}</Oculto>
+              </Titulo>
+              <Legenda color="sobreVerdeSuave"><Oculto>{formatarMoeda(dados.gastoAno)}</Oculto> no ano</Legenda>
             </Cartao>
 
             {dados.proximaColheita ? (
@@ -192,21 +187,35 @@ export default function Home() {
                     <Feather name="calendar" size={20} color={cores.alerta} />
                   </YStack>
                   <YStack flex={1}>
-                    <Text fontSize={13} fontWeight="700" color="textoSec" textTransform="uppercase" letterSpacing={0.6}>
-                      Próxima colheita
-                    </Text>
-                    <Text fontSize={16} fontWeight="700" color="texto" marginTop={2}>
+                    <TituloSecao marginBottom={0}>Próxima colheita</TituloSecao>
+                    <Corpo fontSize={16} fontWeight="700" marginTop={2}>
                       {dados.proximaColheita.tipoNome} · {dados.proximaColheita.propriedadeNome}
-                    </Text>
-                    <Text fontSize={14} fontWeight="700" color={dados.proximaColheita.diasRestantes <= 0 ? 'alerta' : 'verde'} marginTop={2}>
+                    </Corpo>
+                    <Legenda fontWeight="700" color={dados.proximaColheita.diasRestantes <= 0 ? 'alerta' : 'verde'} marginTop={2}>
                       {dados.proximaColheita.texto}
-                    </Text>
+                    </Legenda>
                   </YStack>
                   <Feather name="chevron-right" size={20} color={cores.textoTerc} />
                 </XStack>
               </Cartao>
             ) : null}
 
+            {!dados.proximaColheita && dados.plantiosAtivos === 0 ? (
+              <Cartao interativo onPress={registrarPlantio} accessibilityRole="button" accessibilityLabel="Registrar plantio">
+                <XStack alignItems="center" gap={12}>
+                  <YStack width={44} height={44} borderRadius="full" backgroundColor="verdeSuave" alignItems="center" justifyContent="center">
+                    <Feather name="feather" size={20} color={cores.verde} />
+                  </YStack>
+                  <YStack flex={1}>
+                    <Corpo fontSize={16} fontWeight="700">
+                      Nenhum plantio ativo
+                    </Corpo>
+                    <Legenda marginTop={2}>Registre um plantio para acompanhar a colheita.</Legenda>
+                  </YStack>
+                  <Feather name="plus" size={20} color={cores.verde} />
+                </XStack>
+              </Cartao>
+            ) : null}
           </YStack>
         ) : null}
       </ScrollView>
