@@ -19,7 +19,7 @@ export const Cartao = styled(YStack, {
     },
     // Use em cartões clicáveis (com onPress): reduz a opacidade ao tocar
     interativo: {
-      true: { opacity: 'press:0.85', scale: 'press:0.98', borderColor: 'borda press:bordaForte' },
+      true: { opacity: '1 press:0.85', scale: '1 press:0.98', borderColor: 'borda press:bordaForte' },
     },
   } as const,
 

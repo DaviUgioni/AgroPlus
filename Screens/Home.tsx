@@ -10,7 +10,7 @@ import { nomeDoUsuario } from '../Services/conta';
 import { carregarResumo, formatarMoeda, DadosResumo } from '../Services/resumo';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, Cartao, Esqueleto, GraficoColunas, Subtitulo, Tela, Titulo } from '../Components/ui';
+import { Botao, Cartao, Esqueleto, Subtitulo, Tela, Titulo } from '../Components/ui';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -20,7 +20,6 @@ const PASSOS = [
   { titulo: 'Registre plantios e despesas', texto: 'O app calcula a colheita e soma seus gastos.' },
 ];
 
-const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
 function saudacao() {
@@ -64,18 +63,7 @@ export default function Home() {
   }
 
   const semPropriedades = !!dados && dados.propriedades.length === 0;
-  const unica = dados?.propriedades.length === 1 ? dados.propriedades[0] : null;
   const mes = MESES[new Date().getMonth()];
-
-  // Com uma só propriedade vai direto ao formulário; com várias, a aba pergunta qual
-  function lancarDespesa() {
-    if (unica) navigation.navigate('DespesaForm', { propriedadeId: unica.id! });
-    else navigation.navigate('Despesas');
-  }
-  function novoPlantio() {
-    if (unica) navigation.navigate('PlantioForm', { propriedadeId: unica.id! });
-    else navigation.navigate('Plantios');
-  }
 
   return (
     <Tela edges={['top', 'left', 'right']}>
@@ -197,27 +185,6 @@ export default function Home() {
               </Text>
             </Cartao>
 
-            <XStack gap={12}>
-              <Cartao flex={1} interativo gap={2} onPress={() => navigation.navigate('Plantios')} accessibilityRole="button">
-                <Feather name="feather" size={20} color={cores.verde} />
-                <Text fontSize={26} fontWeight="800" color="texto" marginTop={6}>
-                  {dados.plantiosAtivos}
-                </Text>
-                <Text fontSize={14} color="textoSec">
-                  {dados.plantiosAtivos === 1 ? 'plantio ativo' : 'plantios ativos'}
-                </Text>
-              </Cartao>
-              <Cartao flex={1} interativo gap={2} onPress={() => navigation.navigate('Propriedades')} accessibilityRole="button">
-                <Feather name="map-pin" size={20} color={cores.verde} />
-                <Text fontSize={26} fontWeight="800" color="texto" marginTop={6} numberOfLines={1} adjustsFontSizeToFit>
-                  {dados.areaTotal.toLocaleString('pt-BR')} ha
-                </Text>
-                <Text fontSize={14} color="textoSec">
-                  {dados.propriedades.length === 1 ? '1 propriedade' : `${dados.propriedades.length} propriedades`}
-                </Text>
-              </Cartao>
-            </XStack>
-
             {dados.proximaColheita ? (
               <Cartao interativo onPress={() => navigation.navigate('ResumoColheitas')} accessibilityRole="button">
                 <XStack alignItems="center" gap={12}>
@@ -240,28 +207,6 @@ export default function Home() {
               </Cartao>
             ) : null}
 
-            {dados.gastosPorMes.some((g) => g.valor > 0) ? (
-              <Cartao gap={12}>
-                <Text fontSize={13} fontWeight="700" color="textoSec" textTransform="uppercase" letterSpacing={0.6}>
-                  Gastos nos últimos 6 meses
-                </Text>
-                <GraficoColunas
-                  dados={dados.gastosPorMes.map((g, i) => ({
-                    rotulo: MESES_CURTOS[g.mes],
-                    valor: g.valor,
-                    destaque: i === dados.gastosPorMes.length - 1,
-                  }))}
-                />
-              </Cartao>
-            ) : null}
-
-            <Text fontSize={13} fontWeight="700" color="textoSec" textTransform="uppercase" letterSpacing={0.6} marginTop={8}>
-              Atalhos
-            </Text>
-            <XStack gap={12}>
-              <Botao flex={1} icone="plus" titulo="Lançar despesa" onPress={lancarDespesa} />
-              <Botao flex={1} variante="secundario" icone="feather" titulo="Novo plantio" onPress={novoPlantio} />
-            </XStack>
           </YStack>
         ) : null}
       </ScrollView>

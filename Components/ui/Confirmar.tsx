@@ -63,8 +63,8 @@ export function ProvedorConfirmar({ children }: { children: ReactNode }) {
             padding={20}
             paddingBottom={insets.bottom + 20}
             gap={12}
-            animation="medium"
-            y="enter:400"
+            transition="medium"
+            y="0 enter:400"
           >
             <XStack alignItems="center" gap={12}>
               <YStack width={44} height={44} borderRadius="full" alignItems="center" justifyContent="center" backgroundColor={perigo ? 'erroSuave' : 'verdeSuave'}>

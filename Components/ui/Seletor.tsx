@@ -100,8 +100,8 @@ export default function Seletor<T extends string | number>({
             paddingTop={12}
             paddingBottom={insets.bottom + 12}
             maxHeight="70%"
-            animation="medium"
-            y="enter:400"
+            transition="medium"
+            y="0 enter:400"
           >
             <YStack alignSelf="center" width={40} height={4} borderRadius="full" backgroundColor="borda" />
             <Text fontSize={16} fontWeight="600" color="texto" paddingHorizontal={20} paddingTop={16} paddingBottom={8}>

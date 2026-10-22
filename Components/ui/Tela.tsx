@@ -18,9 +18,9 @@ export default function Tela({ edges, fundo = 'claro', children, ...props }: Tel
       <YStack
         flex={1}
         paddingHorizontal={20}
-        animation="medium"
-        opacity="enter:0"
-        y="enter:8"
+        transition="medium"
+        opacity="1 enter:0"
+        y="0 enter:8"
         {...props}
       >
         {children}

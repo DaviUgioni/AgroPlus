@@ -16,7 +16,6 @@ import {
   Cartao,
   Chip,
   EstadoVazio,
-  GraficoBarras,
   GraficoColunas,
   ListaEsqueleto,
   Tela,
@@ -30,10 +29,9 @@ type Periodo = 'mes' | 'ano' | 'tudo';
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
 // Soma das despesas que caem no período (mês ou ano de referência; "tudo" soma tudo)
-function somar(despesas: DadosResumo['despesas'], periodo: Periodo, ano: number, mes: number, propriedadeId?: string) {
+function somar(despesas: DadosResumo['despesas'], periodo: Periodo, ano: number, mes: number) {
   let total = 0;
   for (const d of despesas) {
-    if (propriedadeId && d.propriedadeId !== propriedadeId) continue;
     const dt = d.data?.toDate?.();
     if (!dt) continue;
     if (periodo === 'mes' && !(dt.getFullYear() === ano && dt.getMonth() === mes)) continue;
@@ -114,11 +112,6 @@ export default function Resumo() {
 
     const porMes = Array.from({ length: 12 }, (_, m) => somar(dados.despesas, 'mes', ano, m));
 
-    const porPropriedade = dados.propriedades
-      .map((p) => ({ rotulo: p.nome, valor: somar(dados.despesas, periodo, ano, mes, p.id) }))
-      .filter((p) => p.valor > 0)
-      .sort((a, b) => b.valor - a.valor);
-
     const colheitas = dados.plantios
       .map((p) => {
         const est = estimativaColheita(p.dataPlantio, p.diasParaColheita);
@@ -134,7 +127,7 @@ export default function Resumo() {
       })
       .sort((a, b) => a.dias - b.dias);
 
-    return { gasto, anterior, rotuloAnterior, porMes, porPropriedade, colheitas };
+    return { gasto, anterior, rotuloAnterior, porMes, colheitas };
   }, [dados, periodo, ano, mes]);
 
   const nomePeriodo = periodo === 'mes' ? MESES[mes] : periodo === 'ano' ? String(ano) : 'de todo o período';
@@ -251,16 +244,6 @@ export default function Resumo() {
               dados={calculos.porMes.map((valor, i) => ({ rotulo: MESES[i].charAt(0).toUpperCase(), valor, destaque: i === mesGrafico }))}
             />
           </Cartao>
-
-          {/* Quanto cada propriedade pesa */}
-          {calculos.porPropriedade.length > 1 ? (
-            <Cartao marginTop={12} gap={12}>
-              <Text fontSize={13} fontWeight="700" color="textoSec" textTransform="uppercase" letterSpacing={0.6}>
-                Gasto por propriedade
-              </Text>
-              <GraficoBarras formatar={formatarMoeda} dados={calculos.porPropriedade} />
-            </Cartao>
-          ) : null}
 
           {/* Próximas colheitas */}
           {calculos.colheitas.length > 0 ? (

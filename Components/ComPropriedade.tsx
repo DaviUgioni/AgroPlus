@@ -1,15 +1,15 @@
 // Components/ComPropriedade.tsx
-// Moldura das abas Plantios e Despesas: cabeçalho, escolha da propriedade (chips) e o conteúdo dela.
+// Moldura das abas Plantios e Despesas: cabeçalho, escolha da propriedade (seletor) e o conteúdo dela.
 // A propriedade escolhida é lembrada entre as abas enquanto o app está aberto.
 import { ReactNode, useCallback, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { Alert } from 'react-native';
 import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { YStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades, Propriedade } from '../Services/propriedades';
 import { mensagemErro } from '../Services/erros';
 import { RootStackParamList } from '../App';
-import { Cabecalho, Chip, EstadoVazio, ListaEsqueleto, Tela } from './ui';
+import { Cabecalho, EstadoVazio, ListaEsqueleto, Seletor, Tela } from './ui';
 
 let propriedadeAtivaId: string | null = null;
 
@@ -65,16 +65,15 @@ export default function ComPropriedade({ titulo, children }: Props) {
       ) : (
         <YStack flex={1}>
           {propriedades.length > 1 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ flexGrow: 0, marginBottom: 12 }}
-              contentContainerStyle={{ gap: 8, paddingRight: 8 }}
-            >
-              {propriedades.map((p) => (
-                <Chip key={p.id} texto={p.nome} ativo={p.id === escolhidaId} onPress={() => escolher(p.id!)} />
-              ))}
-            </ScrollView>
+            <YStack marginBottom={12}>
+              <Seletor
+                compacto
+                valor={escolhidaId ?? ''}
+                opcoes={propriedades.map((p) => ({ label: p.nome, valor: p.id! }))}
+                aoMudar={escolher}
+                placeholder="Propriedade"
+              />
+            </YStack>
           ) : null}
           {/* key força recarregar o conteúdo ao trocar de propriedade */}
           {escolhida ? <YStack key={escolhida.id} flex={1}>{children(escolhida)}</YStack> : null}

@@ -20,9 +20,9 @@ export default function Chip({ texto, ativo, onPress }: ChipProps) {
       minHeight={40}
       alignItems="center"
       paddingVertical={8}
-      opacity="press:0.8"
-      animation="quick"
-      scale="press:0.96"
+      transition="quick"
+      opacity="1 press:0.8"
+      scale="1 press:0.96"
       onPress={() => {
         vibrar();
         onPress?.();

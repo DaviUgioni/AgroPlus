@@ -58,8 +58,8 @@ export function GraficoColunas({ dados, altura = 110, valores = 'todos', aoTocar
               borderBottomLeftRadius={3}
               borderBottomRightRadius={3}
               backgroundColor={d.destaque ? 'verdeDestaque' : 'verdeSuave'}
-              animation="medium"
-              opacity="enter:0"
+              transition="medium"
+              opacity="1 enter:0"
             />
             <Text fontSize={13} fontWeight={d.destaque ? '700' : '500'} color={d.destaque ? 'texto' : 'textoSec'}>
               {d.rotulo}

@@ -54,8 +54,8 @@ export default function MenuAcoes({ acoes, titulo, rotulo = 'Mais opções', ...
             borderTopRightRadius="3xl"
             paddingTop={12}
             paddingBottom={insets.bottom + 12}
-            animation="medium"
-            y="enter:400"
+            transition="medium"
+            y="0 enter:400"
           >
             <YStack alignSelf="center" width={40} height={4} borderRadius="full" backgroundColor="borda" />
             {titulo ? (

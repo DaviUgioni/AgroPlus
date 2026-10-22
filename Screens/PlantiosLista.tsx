@@ -3,7 +3,7 @@ import { FlatList, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { Text, XStack, YStack } from 'tamagui';
+import { Text, YStack } from 'tamagui';
 import { listarPlantiosPorPropriedade, excluirPlantio, estimativaColheita, textoEstimativa, Plantio } from '../Services/plantios';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
@@ -106,14 +106,14 @@ export default function PlantiosLista({ embutido, propriedadeId: idEmbutido }: {
                   </YStack>
                 }
               >
-                <XStack justifyContent="space-between" alignItems="center" marginTop={10} marginBottom={6}>
+                <YStack marginTop={10} marginBottom={8} gap={2}>
                   <Text fontSize={14} fontWeight="700" color={estimativa.pronto ? 'alerta' : 'verde'}>
                     {textoEstimativa(estimativa)}
                   </Text>
                   <Text fontSize={13} color="textoSec">
-                    {estimativa.dataPrevista.toLocaleDateString('pt-BR')}
+                    Colheita em {estimativa.dataPrevista.toLocaleDateString('pt-BR')}
                   </Text>
-                </XStack>
+                </YStack>
                 <BarraProgresso valor={progresso} cor={estimativa.pronto ? 'alerta' : 'verde'} />
               </ItemLista>
             );

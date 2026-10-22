@@ -24,7 +24,7 @@ const Moldura = styled(XStack, {
   paddingVertical: 14,
   paddingHorizontal: 20,
   animation: 'quick',
-  scale: 'press:0.97',
+  scale: '1 press:0.97',
 
   variants: {
     variante: {
@@ -46,13 +46,13 @@ const Moldura = styled(XStack, {
         backgroundColor: 'erroSuave',
         borderColor: 'erro',
         borderWidth: 1,
-        opacity: 'press:0.75',
+        opacity: '1 press:0.75',
       },
       texto: {
         backgroundColor: 'transparent',
         minHeight: 44,
         paddingHorizontal: 8,
-        opacity: 'press:0.6',
+        opacity: '1 press:0.6',
       },
     },
     tamanho: {

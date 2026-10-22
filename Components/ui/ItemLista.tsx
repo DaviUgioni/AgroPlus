@@ -35,7 +35,7 @@ export default function ItemLista({
 }: ItemListaProps) {
   return (
     // O wrapper faz o item surgir suavemente quando a lista aparece
-    <YStack animation="medium" opacity="enter:0" y="enter:12" marginBottom={marginBottom}>
+    <YStack transition="medium" opacity="1 enter:0" y="0 enter:12" marginBottom={marginBottom}>
       <Cartao interativo={!!onPress} onPress={onPress} flexDirection="row" alignItems="center" gap={12} padding={14} {...props}>
         {esquerda ?? (icone ? <IconeLista icone={icone} /> : null)}
         <YStack flex={1}>
