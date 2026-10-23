@@ -114,4 +114,4 @@ Davi Ugioni Marcolino — Projeto Integrador, Curso de Informática
 
 ## Licença
 
-Distribuído sob a licença MIT — veja [LICENSE](LICENSE).
+Projeto proprietário. Todos os direitos reservados — veja [LICENSE](LICENSE).
