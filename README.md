@@ -12,7 +12,6 @@ Centralizar em um só app o cadastro de áreas, o controle de gastos por proprie
 - Cadastro com e-mail e senha (validação ao digitar, borda vermelha, barra de força fraca/média/forte)
 - Login com e-mail/senha, botão mostrar/esconder senha e teclado que não cobre o campo
 - Recuperação de senha por e-mail
-- Biometria (impressão digital) para reabrir uma sessão já salva, quando o aparelho suporta
 - Sessão persistente: continua logado ao fechar o app (Firebase Auth + AsyncStorage)
 
 ### Propriedades e Talhões
@@ -55,7 +54,7 @@ Centralizar em um só app o cadastro de áreas, o controle de gastos por proprie
 
 - **App:** React Native 0.86 + Expo SDK 57 + TypeScript 6 + React Navigation 7
 - **Backend:** Firebase Auth e Firestore (regras e índices em `firestore.rules` / `firestore.indexes.json`)
-- **Mapas/Mídia:** react-native-maps, expo-location, expo-image-picker/manipulator, expo-file-system, expo-sharing, expo-local-authentication
+- **Mapas/Mídia:** react-native-maps, expo-location, expo-image-picker/manipulator, expo-file-system, expo-sharing
 
 ## Estrutura
 

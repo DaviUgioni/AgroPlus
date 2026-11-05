@@ -1,5 +1,5 @@
 // Screens/Login.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -14,14 +14,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { YStack } from 'tamagui';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import * as LocalAuthentication from 'expo-local-authentication';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
 import { Botao, Campo, Corpo, toast } from '../Components/ui';
 import FaixaMarca from '../Components/FaixaMarca';
 import { mensagemErro } from '../Services/erros';
-import { lerPreferencias } from '../Services/preferencias';
 
 type LoginNavigationProp = NavigationProp<RootStackParamList, 'Login'>;
 
@@ -32,21 +30,10 @@ export default function Login() {
   const [senha, setSenha] = useState('');
   const [entrando, setEntrando] = useState(false);
   const [emailErro, setEmailErro] = useState('');
-  const [bioDisponivel, setBioDisponivel] = useState(false);
 
   function isEmailValido(v: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   }
-
-  // Verifica se biometria está disponível
-  useEffect(() => {
-    (async () => {
-      const compativel = await LocalAuthentication.hasHardwareAsync();
-      const enrolado = await LocalAuthentication.isEnrolledAsync();
-      const { biometria } = await lerPreferencias(); // pode ser desligada nas Configurações
-      setBioDisponivel(compativel && enrolado && biometria);
-    })();
-  }, []);
 
   async function handleLogin() {
     const emailNorm = email.trim().toLowerCase();
@@ -96,29 +83,6 @@ export default function Login() {
       if (error.code === 'auth/user-not-found') msg = 'E-mail não encontrado.';
       else if (error.code === 'auth/invalid-email') msg = 'E-mail inválido.';
       toast.erro(msg);
-    }
-  }
-
-  async function handleBiometria() {
-    if (auth.currentUser) {
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-      return;
-    }
-    try {
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Entrar com biometria',
-        cancelLabel: 'Cancelar',
-        disableDeviceFallback: false,
-      });
-      if (result.success) {
-        if (auth.currentUser) {
-          navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-        } else {
-          toast.erro('Nenhuma sessão salva. Faça login com e-mail e senha primeiro.');
-        }
-      }
-    } catch {
-      toast.erro('Não foi possível usar a biometria.');
     }
   }
 
@@ -179,16 +143,6 @@ export default function Login() {
               />
 
               <Botao titulo={entrando ? 'Entrando...' : 'Entrar'} carregando={entrando} onPress={handleLogin} />
-
-              {bioDisponivel ? (
-                <Botao
-                  variante="secundario"
-                  icone="smartphone"
-                  titulo="Entrar com impressão digital"
-                  marginTop={12}
-                  onPress={handleBiometria}
-                />
-              ) : null}
 
               <Corpo
                 fontSize={14}

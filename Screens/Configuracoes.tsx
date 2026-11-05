@@ -6,14 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { XStack, YStack } from 'tamagui';
 import { signOut } from 'firebase/auth';
-import * as LocalAuthentication from 'expo-local-authentication';
 import { auth } from '../FirebaseConfig';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
 import appConfig from '../app.json';
 import { Botao, Cabecalho, Campo, Cartao, Corpo, Dica, Legenda, Tela, Titulo, TituloSecao, toast, confirmar } from '../Components/ui';
 import { alterarNome, enviarLinkTrocaSenha, excluirConta, nomeDoUsuario } from '../Services/conta';
-import { lerPreferencias, salvarPreferencia } from '../Services/preferencias';
 import {
   baixarPlanilha,
   CanceladoError,
@@ -97,8 +95,6 @@ export default function Configuracoes() {
   const [editandoNome, setEditandoNome] = useState(false);
   const [salvandoNome, setSalvandoNome] = useState(false);
 
-  const [bioSuportada, setBioSuportada] = useState(false);
-  const [bioAtiva, setBioAtiva] = useState(true);
   const [planilha, setPlanilha] = useState<'baixando' | 'compartilhando' | null>(null);
   const [pasta, setPasta] = useState<string | null>(null);
 
@@ -109,16 +105,7 @@ export default function Configuracoes() {
   const [etapaExclusao, setEtapaExclusao] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
-      const [hardware, cadastrada, prefs] = await Promise.all([
-        LocalAuthentication.hasHardwareAsync(),
-        LocalAuthentication.isEnrolledAsync(),
-        lerPreferencias(),
-      ]);
-      setBioSuportada(hardware && cadastrada);
-      setBioAtiva(prefs.biometria);
-      setPasta(await pastaDeDownload());
-    })();
+    pastaDeDownload().then(setPasta);
   }, []);
 
   const nomeExibido = usuario?.displayName?.trim() || nomeDoUsuario() || 'Produtor';
@@ -157,11 +144,6 @@ export default function Configuracoes() {
         },
       },
     ]);
-  }
-
-  async function handleBiometria(ativar: boolean) {
-    setBioAtiva(ativar);
-    await salvarPreferencia('biometria', ativar);
   }
 
   function erroPlanilha(error: unknown) {
@@ -298,25 +280,6 @@ export default function Configuracoes() {
             titulo="Alterar senha"
             descricao="Enviamos um link para o seu e-mail"
             onPress={handleTrocarSenha}
-          />
-          <Opcao
-            icone="smartphone"
-            titulo="Entrar com impressão digital"
-            descricao={
-              bioSuportada
-                ? 'Mostra o botão de biometria na tela de login'
-                : 'Seu aparelho não tem biometria cadastrada'
-            }
-            direita={
-              <Switch
-                value={bioSuportada && bioAtiva}
-                disabled={!bioSuportada}
-                onValueChange={handleBiometria}
-                trackColor={{ true: cores.verde, false: cores.bordaForte }}
-                thumbColor={cores.sobreVerde}
-                accessibilityLabel="Entrar com impressão digital"
-              />
-            }
           />
           <Opcao
             icone="moon"
