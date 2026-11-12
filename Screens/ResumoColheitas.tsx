@@ -9,7 +9,7 @@ import { listarPropriedades } from '../Services/propriedades';
 import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plantio } from '../Services/plantios';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Cabecalho, EstadoVazio, IconeLista, ItemLista, Legenda, ListaEsqueleto, Tela, toast } from '../Components/ui';
+import { Cabecalho, EstadoVazio, ItemLista, Legenda, ListaEsqueleto, Tela, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type NavProp = NavigationProp<RootStackParamList>;
@@ -77,7 +77,7 @@ export default function ResumoColheitas() {
 
   return (
     <Tela edges={['top', 'left', 'right']}>
-      <Cabecalho titulo="Colheitas" subtitulo="Ordenadas pela mais próxima" />
+      <Cabecalho titulo="Colheitas" />
 
       {carregando ? (
         <ListaEsqueleto quantidade={3} />
@@ -101,9 +101,8 @@ export default function ResumoColheitas() {
                   propriedadeNome: item.propriedadeNome,
                 })
               }
-              esquerda={<IconeLista icone="feather" tom={item.pronto ? 'alerta' : 'verde'} />}
             >
-              <Legenda fontWeight="600" color={item.pronto ? 'alerta' : 'verde'} marginTop={4}>
+              <Legenda fontWeight="600" color={item.pronto ? 'alerta' : 'textoSec'} marginTop={4}>
                 {item.texto}
               </Legenda>
             </ItemLista>

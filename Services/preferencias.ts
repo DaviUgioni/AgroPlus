@@ -2,8 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Preferências guardadas no próprio aparelho (não vão para o Firebase).
 export interface Preferencias {
-  /** Mostra o botão "Entrar com impressão digital" no login */
-  biometria: boolean;
   /** Tema escuro do app */
   modoEscuro: boolean;
   /** Pasta (URI do Android) onde as planilhas são salvas ao tocar em "Baixar" */
@@ -13,7 +11,6 @@ export interface Preferencias {
 }
 
 const PADRAO: Preferencias = {
-  biometria: true,
   modoEscuro: false,
 };
 

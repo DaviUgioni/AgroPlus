@@ -3,7 +3,7 @@ import { FlatList, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import { XStack } from 'tamagui';
+import { XStack, YStack } from 'tamagui';
 import { auth } from '../FirebaseConfig';
 import { listarPropriedades } from '../Services/propriedades';
 import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, CategoriaDespesa, LABELS_CATEGORIA } from '../Services/despesas';
@@ -132,27 +132,26 @@ export default function ResumoDespesas() {
               </Cartao>
 
               {porCategoria.length > 0 && (
-                <Cartao marginBottom={20}>
-                  <TituloSecao>Por categoria</TituloSecao>
+                <YStack marginBottom={24}>
+                  <TituloSecao marginBottom={12}>Por categoria</TituloSecao>
                   <GraficoBarras
                     formatar={formatarMoeda}
                     dados={porCategoria.map((c) => ({ rotulo: LABELS_CATEGORIA[c.categoria], valor: c.valor }))}
                   />
-                </Cartao>
+                </YStack>
               )}
 
-              {porPropriedade.length > 0 && <TituloSecao>Por propriedade</TituloSecao>}
+              {porPropriedade.length > 0 && <TituloSecao marginBottom={0}>Por propriedade</TituloSecao>}
             </>
           }
           ListEmptyComponent={<EstadoVazio icone="dollar-sign" texto="Nenhuma despesa nesse período." marginTop={16} />}
           renderItem={({ item }) => (
             <ItemLista
-              icone="map"
               titulo={item.nome}
               onPress={() => navigation.navigate('DespesasLista', { propriedadeId: item.propriedadeId })}
               direita={
                 <XStack alignItems="center" gap={6}>
-                  <Corpo fontSize={14} fontWeight="600" color="verde">
+                  <Corpo fontSize={14} fontWeight="600">
                     {formatarMoeda(item.valor)}
                   </Corpo>
                   <Feather name="chevron-right" size={18} color={cores.textoTerc} />

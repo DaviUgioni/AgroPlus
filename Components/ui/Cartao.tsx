@@ -1,21 +1,20 @@
 // Components/ui/Cartao.tsx
+// Bloco com borda, sem sombra. Reserve para o que é mesmo um bloco (totais); listas usam ItemLista.
 import { YStack, styled } from 'tamagui';
-
-const SOMBRA = '0 1px 3px rgba(0, 0, 0, 0.06)';
 
 export const Cartao = styled(YStack, {
   backgroundColor: 'branco',
-  borderRadius: 'xl',
+  borderRadius: 'lg',
   borderWidth: 1,
   borderColor: 'borda',
-  padding: 16,
+  padding: 12,
   transition: 'quick',
 
   variants: {
     tom: {
-      branco: { boxShadow: SOMBRA },
+      branco: {},
       bege: { backgroundColor: 'bege', borderColor: 'bege' },
-      verde: { backgroundColor: 'verdeDestaque', borderColor: 'verdeDestaque', boxShadow: SOMBRA },
+      verde: { backgroundColor: 'verdeDestaque', borderColor: 'verdeDestaque' },
     },
     // Use em cartões clicáveis (com onPress): reduz a opacidade ao tocar
     interativo: {
