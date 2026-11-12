@@ -32,15 +32,15 @@ O tema e a paleta ficam em `tamagui.config.ts`. **Antes de criar um componente n
 | Estados | `erro`/`erroSuave`, `alerta`/`alertaSuave` |
 | Fixas | `sobreVerde`, `sobreVerdeSuave` (texto e ícone sobre verde) |
 
-Raios: `lg` para campos e botões pequenos, `xl` para botões, cartões e blocos, `full` para chips.
+Raios: `lg` para campos, botões pequenos e cartões, `xl` para botões, `full` para chips.
 
 ## Componentes disponíveis
 
 - **`Tela`**: container de toda tela (área segura, fundo `begeClaro`, margem lateral 20, animação de entrada). `fundo="branco"` troca o fundo. Também `TelaCarregando` e `Carregando`.
 - **`Cabecalho`**: `titulo`, `subtitulo?`, `voltar?` (padrão `true`), `direita?`.
 - **`Botao`**: `variante` = `primario | secundario | contorno | perigo | texto`; `tamanho` = `sm | md`; `titulo`, `icone` (nome do Feather), `carregando`, `disabled`, `cor`. `BotaoFlutuante` fixa no rodapé respeitando a área segura.
-- **`Cartao`**: `tom` = `branco | bege | verde`; `interativo` em cartões com `onPress`.
-- **`ItemLista`**: linha em cartão com `titulo`, `subtitulo?`, `esquerda?`, `direita?`, `children?`.
+- **`Cartao`**: `tom` = `branco | bege | verde`; `interativo` em cartões com `onPress`. Sem sombra; só para blocos de verdade (totais), nunca como item de lista.
+- **`ItemLista`**: linha sem caixa, separada por divisor, com `titulo`, `subtitulo?`, `esquerda?`, `direita?`, `children?`. É o padrão de listagem.
 - **`Campo`**: input com `rotulo`, `erro`, `ajuda`, `icone`, `senha`, `direita`. `CaixaCampo` é a moldura crua.
 - **`Seletor<T>`**: `rotulo`, `valor`, `opcoes: {label, valor}[]`, `aoMudar`, `placeholder`, `ajuda`, `compacto`.
 - **`Chip`**: filtro/seleção rápida, `texto`, `ativo`, `onPress`.

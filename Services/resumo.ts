@@ -1,5 +1,3 @@
-// Services/resumo.ts
-// Números gerais da conta (propriedades, gastos, plantios). Usado pela Home e pela tela Resumo.
 import { listarPropriedades, Propriedade } from './propriedades';
 import { listarDespesasPorPropriedade, totalDespesasMes, totalDespesasAno, Despesa } from './despesas';
 import { listarPlantiosPorPropriedade, estimativaColheita, textoEstimativa, Plantio } from './plantios';

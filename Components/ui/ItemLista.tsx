@@ -1,19 +1,18 @@
 // Components/ui/ItemLista.tsx
 import { ReactNode } from 'react';
 import { Feather } from '@expo/vector-icons';
-import { GetProps, Text, YStack } from 'tamagui';
+import { Text, XStack, XStackProps, YStack } from 'tamagui';
 import { cores } from '../../tamagui.config';
 import { IconeFeather } from './Botao';
-import { Cartao } from './Cartao';
 import IconeLista from './IconeLista';
 import { Legenda } from './Textos';
 
-type ItemListaProps = GetProps<typeof Cartao> & {
+type ItemListaProps = XStackProps & {
   titulo: string;
   subtitulo?: string;
   /** Conteúdo à esquerda (imagem, ícone) */
   esquerda?: ReactNode;
-  /** Atalho: mostra um quadrado com este ícone à esquerda (quando não há `esquerda`) */
+  /** Atalho: mostra este ícone à esquerda (quando não há `esquerda`) */
   icone?: IconeFeather;
   /** Conteúdo à direita. Se omitido e houver onPress, mostra uma seta */
   direita?: ReactNode;
@@ -21,22 +20,24 @@ type ItemListaProps = GetProps<typeof Cartao> & {
   children?: ReactNode;
 };
 
-// Linha padrão das listas (propriedades, plantios, despesas...).
-export default function ItemLista({
-  titulo,
-  subtitulo,
-  esquerda,
-  icone,
-  direita,
-  children,
-  onPress,
-  marginBottom = 10,
-  ...props
-}: ItemListaProps) {
+// Linha padrão das listas (propriedades, plantios, despesas...): sem caixa, separada por um divisor.
+export default function ItemLista({ titulo, subtitulo, esquerda, icone, direita, children, onPress, ...props }: ItemListaProps) {
   return (
     // O wrapper faz o item surgir suavemente quando a lista aparece
-    <YStack transition="medium" opacity="1 enter:0" y="0 enter:12" marginBottom={marginBottom}>
-      <Cartao interativo={!!onPress} onPress={onPress} flexDirection="row" alignItems="center" gap={12} padding={14} {...props}>
+    <YStack transition="medium" opacity="1 enter:0" y="0 enter:12">
+      <XStack
+        alignItems="center"
+        gap={12}
+        minHeight={48}
+        paddingVertical={12}
+        borderBottomWidth={1}
+        borderBottomColor="borda"
+        transition="quick"
+        opacity={onPress ? '1 press:0.6' : undefined}
+        onPress={onPress}
+        accessibilityRole={onPress ? 'button' : undefined}
+        {...props}
+      >
         {esquerda ?? (icone ? <IconeLista icone={icone} /> : null)}
         <YStack flex={1}>
           <Text fontSize={16} fontWeight="700" color="texto">
@@ -46,7 +47,7 @@ export default function ItemLista({
           {children}
         </YStack>
         {direita ?? (onPress ? <Feather name="chevron-right" size={20} color={cores.textoTerc} /> : null)}
-      </Cartao>
+      </XStack>
     </YStack>
   );
 }

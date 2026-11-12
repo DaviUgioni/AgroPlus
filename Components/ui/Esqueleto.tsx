@@ -26,12 +26,12 @@ export function Esqueleto({ largura = '100%', altura = 16, raio = 8 }: { largura
   );
 }
 
-/** Lista de cartões-fantasma, com o mesmo formato de um ItemLista. */
+/** Linhas-fantasma, com o mesmo formato de um ItemLista. */
 export function ListaEsqueleto({ quantidade = 4, ...props }: { quantidade?: number } & YStackProps) {
   return (
-    <YStack gap={10} {...props} accessibilityLabel="Carregando" accessibilityRole="progressbar">
+    <YStack {...props} accessibilityLabel="Carregando" accessibilityRole="progressbar">
       {Array.from({ length: quantidade }).map((_, i) => (
-        <YStack key={i} backgroundColor="branco" borderWidth={1} borderColor="borda" borderRadius="xl" padding={14} gap={8}>
+        <YStack key={i} borderBottomWidth={1} borderBottomColor="borda" paddingVertical={12} gap={8}>
           <Esqueleto largura="55%" altura={16} />
           <Esqueleto largura="80%" altura={13} />
         </YStack>

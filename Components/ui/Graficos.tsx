@@ -29,7 +29,7 @@ export function GraficoColunas({ dados, altura = 110, valores = 'todos', aoTocar
   return (
     <XStack
       gap={dados.length > 8 ? 4 : 8}
-      alignItems="flex-end"
+      alignItems="stretch"
       accessibilityRole={aoTocar ? undefined : 'image'}
       accessibilityLabel={aoTocar ? undefined : `Gráfico de gastos. ${resumo}`}
     >
@@ -40,10 +40,12 @@ export function GraficoColunas({ dados, altura = 110, valores = 'todos', aoTocar
             key={`${d.rotulo}${i}`}
             flex={1}
             alignItems="center"
+            justifyContent="flex-end"
             gap={4}
             onPress={aoTocar ? () => aoTocar(i) : undefined}
             accessibilityRole={aoTocar ? 'button' : undefined}
             accessibilityLabel={aoTocar ? `${d.rotulo}: ${Math.round(d.valor)} reais` : undefined}
+            accessibilityState={aoTocar ? { selected: !!d.destaque } : undefined}
           >
             {valores === 'todos' ? (
               <Text width="100%" textAlign="center" fontSize={13} fontWeight={d.destaque ? '800' : '600'} color={d.destaque ? 'verde' : 'textoSec'} numberOfLines={1}>
@@ -53,11 +55,9 @@ export function GraficoColunas({ dados, altura = 110, valores = 'todos', aoTocar
             <YStack
               width="100%"
               height={h}
-              borderTopLeftRadius={8}
-              borderTopRightRadius={8}
-              borderBottomLeftRadius={3}
-              borderBottomRightRadius={3}
-              backgroundColor={d.destaque ? 'verdeDestaque' : 'verdeSuave'}
+              borderTopLeftRadius={4}
+              borderTopRightRadius={4}
+              backgroundColor={d.destaque ? 'verdeDestaque' : 'bordaForte'}
               transition="medium"
               opacity="1 enter:0"
             />

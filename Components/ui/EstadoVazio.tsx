@@ -16,17 +16,7 @@ type EstadoVazioProps = YStackProps & {
 export default function EstadoVazio({ texto, titulo, icone = 'inbox', acao, ...props }: EstadoVazioProps) {
   return (
     <YStack alignItems="center" gap={10} marginTop={40} paddingHorizontal={16} {...props}>
-      <YStack
-        width={64}
-        height={64}
-        borderRadius="full"
-        backgroundColor="verdeSuave"
-        alignItems="center"
-        justifyContent="center"
-        marginBottom={4}
-      >
-        <Feather name={icone} size={28} color={cores.verde} />
-      </YStack>
+      <Feather name={icone} size={28} color={cores.textoTerc} />
       {titulo ? (
         <Text fontSize={17} fontWeight="600" color="texto" textAlign="center">
           {titulo}

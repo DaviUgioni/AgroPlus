@@ -1,9 +1,4 @@
-import {
-  EmailAuthProvider,
-  deleteUser,
-  reauthenticateWithCredential,
-  sendPasswordResetEmail,
-  updateProfile,
+import {EmailAuthProvider, deleteUser, reauthenticateWithCredential, sendPasswordResetEmail,  updateProfile,
 } from 'firebase/auth';
 import { Directory, Paths } from 'expo-file-system';
 import { auth } from '../FirebaseConfig';

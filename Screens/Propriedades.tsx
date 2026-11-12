@@ -47,9 +47,22 @@ export default function Propriedades() {
   }
 
 
+  const areaTotal = propriedades.reduce((soma, p) => soma + (p.areaTotal || 0), 0);
+  // O ícone só existe para alinhar com as fotos; sem nenhuma foto na lista, não precisa
+  const algumaFoto = propriedades.some((p) => p.imagemUrl);
+
   return (
     <Tela edges={['top', 'left', 'right']}>
-      <Cabecalho voltar={false} grande titulo="Minhas propriedades" subtitulo={propriedades.length > 0 ? 'Toque em uma para ver talhões e gastos' : undefined} />
+      <Cabecalho
+        voltar={false}
+        grande
+        titulo="Minhas propriedades"
+        subtitulo={
+          propriedades.length > 0
+            ? `${propriedades.length} ${propriedades.length === 1 ? 'propriedade' : 'propriedades'} · ${areaTotal.toLocaleString('pt-BR')} ha`
+            : undefined
+        }
+      />
 
       {carregando ? (
         <ListaEsqueleto />
@@ -71,12 +84,12 @@ export default function Propriedades() {
           renderItem={({ item }) => (
             <ItemLista
               titulo={item.nome}
-              subtitulo={`${item.localizacao} · ${item.areaTotal} ha`}
+              subtitulo={`${item.localizacao} · ${(item.areaTotal || 0).toLocaleString('pt-BR')} ha`}
               onPress={() => navigation.navigate('PropriedadeDetalhe', { propriedadeId: item.id! })}
-              icone="map"
+              icone={algumaFoto ? 'map' : undefined}
               esquerda={
                 item.imagemUrl ? (
-                  <Image source={{ uri: item.imagemUrl }} style={{ width: 52, height: 52, borderRadius: 12 }} />
+                  <Image source={{ uri: item.imagemUrl }} style={{ width: 48, height: 48, borderRadius: 8 }} />
                 ) : undefined
               }
             />

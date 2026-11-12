@@ -1,7 +1,7 @@
 // Screens/Home.tsx
 import { useCallback, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
-import { Image, RefreshControl, ScrollView } from 'react-native';
+import { RefreshControl, ScrollView } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { XStack, YStack } from 'tamagui';
@@ -10,15 +10,9 @@ import { nomeDoUsuario } from '../Services/conta';
 import { carregarResumo, formatarMoeda, DadosResumo } from '../Services/resumo';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { Botao, BotaoIcone, BotaoOlho, Cartao, Corpo, EstadoVazio, Esqueleto, Legenda, Subtitulo, Tela, Titulo, TituloSecao, Oculto } from '../Components/ui';
+import { BotaoIcone, BotaoOlho, Cartao, Corpo, EstadoVazio, Esqueleto, ItemLista, Legenda, ListaEsqueleto, Subtitulo, Tela, Titulo, TituloSecao, Oculto } from '../Components/ui';
 
 type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
-
-const PASSOS = [
-  { titulo: 'Cadastre sua propriedade', texto: 'Nome, localização e tamanho em hectares.' },
-  { titulo: 'Divida em talhões', texto: 'Talhões são as partes da propriedade, como "Área do milho".' },
-  { titulo: 'Registre plantios e despesas', texto: 'O app calcula a colheita e soma seus gastos.' },
-];
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
@@ -79,12 +73,9 @@ export default function Home() {
   return (
     <Tela edges={['top', 'left', 'right']}>
       <XStack alignItems="center" justifyContent="space-between" marginTop={12}>
-        <XStack alignItems="center" gap={8}>
-          <Image source={require('../assets/logo.png')} style={{ width: 32, height: 32 }} resizeMode="contain" />
-          <Corpo fontSize={20} fontWeight="800" color="verde">
-            AgroPlus
-          </Corpo>
-        </XStack>
+        <Corpo fontSize={20} fontWeight="800" color="verde">
+          AgroPlus
+        </Corpo>
         <XStack gap={4}>
           <BotaoIcone icone="help-circle" rotulo="Ajuda" onPress={() => navigation.navigate('Ajuda')} />
           <BotaoIcone icone="settings" rotulo="Configurações" onPress={() => navigation.navigate('Configuracoes')} />
@@ -96,12 +87,14 @@ export default function Home() {
         contentContainerStyle={{ paddingVertical: 20, paddingBottom: 28 }}
         refreshControl={<RefreshControl refreshing={atualizando} onRefresh={atualizar} colors={[cores.verde]} tintColor={cores.verde} />}
       >
-        <Titulo tamanho="grande">
-          {nome ? `${saudacao()}, ${nome}!` : `${saudacao()}!`}
-        </Titulo>
-        <Subtitulo marginTop={4} marginBottom={20}>
-          {semPropriedades ? 'Vamos configurar sua produção em 3 passos.' : 'Veja como está a sua produção hoje.'}
-        </Subtitulo>
+        <YStack marginBottom={16}>
+          <Titulo>{nome ? `${saudacao()}, ${nome}` : saudacao()}</Titulo>
+          {dados && dados.plantiosAtivos > 0 ? (
+            <Subtitulo marginTop={2}>
+              {dados.plantiosAtivos} {dados.plantiosAtivos === 1 ? 'plantio ativo' : 'plantios ativos'}
+            </Subtitulo>
+          ) : null}
+        </YStack>
 
         {!carregando && erro && !dados ? (
           <EstadoVazio
@@ -115,53 +108,29 @@ export default function Home() {
 
         {carregando ? (
           <YStack gap={12}>
-            <Esqueleto altura={132} raio={20} />
-            <XStack gap={12}>
-              <YStack flex={1}>
-                <Esqueleto altura={92} raio={20} />
-              </YStack>
-              <YStack flex={1}>
-                <Esqueleto altura={92} raio={20} />
-              </YStack>
-            </XStack>
+            <Esqueleto altura={112} raio={8} />
+            <ListaEsqueleto quantidade={1} />
           </YStack>
         ) : null}
 
         {semPropriedades ? (
-          <Cartao gap={14}>
-            {PASSOS.map((p, i) => (
-              <XStack key={p.titulo} gap={12} alignItems="flex-start">
-                <YStack
-                  width={30}
-                  height={30}
-                  borderRadius="full"
-                  backgroundColor={i === 0 ? 'verdeDestaque' : 'verdeSuave'}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Legenda fontWeight="700" color={i === 0 ? 'sobreVerde' : 'verde'}>
-                    {i + 1}
-                  </Legenda>
-                </YStack>
-                <YStack flex={1}>
-                  <Corpo fontSize={16} fontWeight="700">
-                    {p.titulo}
-                  </Corpo>
-                  <Legenda marginTop={2}>{p.texto}</Legenda>
-                </YStack>
-              </XStack>
-            ))}
-            <Botao icone="plus" titulo="Cadastrar minha propriedade" marginTop={4} onPress={() => navigation.navigate('PropriedadeForm')} />
-          </Cartao>
+          <YStack>
+            <TituloSecao marginBottom={0}>Para começar</TituloSecao>
+            <ItemLista
+              titulo="Cadastrar propriedade"
+              subtitulo="Nome, localização e tamanho em hectares"
+              onPress={() => navigation.navigate('PropriedadeForm')}
+              direita={<Feather name="plus" size={20} color={cores.verde} />}
+            />
+          </YStack>
         ) : null}
 
         {dados && !semPropriedades ? (
-          <YStack gap={12}>
+          <YStack gap={16}>
             <Cartao
               tom="verde"
               interativo
               gap={4}
-              padding={20}
               onPress={() => navigation.navigate('ResumoDespesas', { periodo: 'mes' })}
               accessibilityRole="button"
             >
@@ -181,40 +150,27 @@ export default function Home() {
             </Cartao>
 
             {dados.proximaColheita ? (
-              <Cartao interativo onPress={() => navigation.navigate('ResumoColheitas')} accessibilityRole="button">
-                <XStack alignItems="center" gap={12}>
-                  <YStack width={44} height={44} borderRadius="full" backgroundColor="alertaSuave" alignItems="center" justifyContent="center">
-                    <Feather name="calendar" size={20} color={cores.alerta} />
-                  </YStack>
-                  <YStack flex={1}>
-                    <TituloSecao marginBottom={0}>Próxima colheita</TituloSecao>
-                    <Corpo fontSize={16} fontWeight="700" marginTop={2}>
-                      {dados.proximaColheita.tipoNome} · {dados.proximaColheita.propriedadeNome}
-                    </Corpo>
-                    <Legenda fontWeight="700" color={dados.proximaColheita.diasRestantes <= 0 ? 'alerta' : 'verde'} marginTop={2}>
-                      {dados.proximaColheita.texto}
-                    </Legenda>
-                  </YStack>
-                  <Feather name="chevron-right" size={20} color={cores.textoTerc} />
-                </XStack>
-              </Cartao>
+              <YStack>
+                <TituloSecao marginBottom={0}>Próxima colheita</TituloSecao>
+                <ItemLista
+                  titulo={`${dados.proximaColheita.tipoNome} · ${dados.proximaColheita.propriedadeNome}`}
+                  onPress={() => navigation.navigate('ResumoColheitas')}
+                >
+                  <Legenda fontWeight="700" color={dados.proximaColheita.diasRestantes <= 0 ? 'alerta' : 'textoSec'} marginTop={2}>
+                    {dados.proximaColheita.texto}
+                  </Legenda>
+                </ItemLista>
+              </YStack>
             ) : null}
 
             {!dados.proximaColheita && dados.plantiosAtivos === 0 ? (
-              <Cartao interativo onPress={registrarPlantio} accessibilityRole="button" accessibilityLabel="Registrar plantio">
-                <XStack alignItems="center" gap={12}>
-                  <YStack width={44} height={44} borderRadius="full" backgroundColor="verdeSuave" alignItems="center" justifyContent="center">
-                    <Feather name="feather" size={20} color={cores.verde} />
-                  </YStack>
-                  <YStack flex={1}>
-                    <Corpo fontSize={16} fontWeight="700">
-                      Nenhum plantio ativo
-                    </Corpo>
-                    <Legenda marginTop={2}>Registre um plantio para acompanhar a colheita.</Legenda>
-                  </YStack>
-                  <Feather name="plus" size={20} color={cores.verde} />
-                </XStack>
-              </Cartao>
+              <ItemLista
+                titulo="Nenhum plantio ativo"
+                subtitulo="Registrar plantio"
+                onPress={registrarPlantio}
+                accessibilityLabel="Registrar plantio"
+                direita={<Feather name="plus" size={20} color={cores.verde} />}
+              />
             ) : null}
           </YStack>
         ) : null}

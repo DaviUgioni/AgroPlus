@@ -1,42 +1,18 @@
-import { ComponentProps, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { FlatList, Alert, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, useFocusEffect, RouteProp, NavigationProp } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import { XStack, YStack } from 'tamagui';
 import { buscarPropriedade, excluirPropriedade, Propriedade } from '../Services/propriedades';
 import { listarTalhoes, excluirTalhao, Talhao } from '../Services/talhoes';
 import { listarDespesasPorTalhao, totalDespesas } from '../Services/despesas';
 import { RootStackParamList } from '../App';
 import { cores } from '../tamagui.config';
-import { BarraProgresso, Botao, Cabecalho, Cartao, Corpo, EstadoVazio, IconeLista, Legenda, MenuAcoes, Tela, TelaCarregando, TituloSecao, confirmar, toast } from '../Components/ui';
+import { BarraProgresso, Botao, Cabecalho, Corpo, EstadoVazio, ItemLista, MenuAcoes, Tela, TelaCarregando, TituloSecao, confirmar, toast } from '../Components/ui';
 import { mensagemErro } from '../Services/erros';
 
 type DetalheRouteProp = RouteProp<RootStackParamList, 'PropriedadeDetalhe'>;
 type DetalheNavigationProp = NavigationProp<RootStackParamList, 'PropriedadeDetalhe'>;
-type IconeFeather = ComponentProps<typeof Feather>['name'];
-
-// Ação principal de cada talhão (as secundárias ficam no menu "⋯")
-function AcaoTalhao({ icone, label, onPress }: { icone: IconeFeather; label: string; onPress: () => void }) {
-  return (
-    <XStack
-      flex={1}
-      alignItems="center"
-      justifyContent="center"
-      gap={8}
-      minHeight={50}
-      backgroundColor="transparent press:begeClaro"
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-    >
-      <Feather name={icone} size={18} color={cores.verde} />
-      <Corpo fontSize={14} fontWeight="700" color="verde" textAlign="center">
-        {label}
-      </Corpo>
-    </XStack>
-  );
-}
 
 export default function PropriedadeDetalhe() {
   const navigation = useNavigation<DetalheNavigationProp>();
@@ -141,7 +117,7 @@ export default function PropriedadeDetalhe() {
           <>
             <Cabecalho
               titulo={propriedade.nome}
-              subtitulo={`${propriedade.localizacao} · ${propriedade.areaTotal} ha`}
+              subtitulo={`${propriedade.localizacao} · ${(propriedade.areaTotal || 0).toLocaleString('pt-BR')} ha`}
               direita={
                 <MenuAcoes
                   titulo={propriedade.nome}
@@ -157,25 +133,25 @@ export default function PropriedadeDetalhe() {
             {propriedade.imagemUrl && (
               <Image
                 source={{ uri: propriedade.imagemUrl }}
-                style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 20, backgroundColor: cores.bege }}
+                style={{ width: '100%', height: 180, borderRadius: 8, marginBottom: 16, backgroundColor: cores.bege }}
               />
             )}
 
             {talhoes.length > 0 && (
-              <Cartao tom="bege" marginBottom={16} gap={8}>
-                <XStack justifyContent="space-between">
-                  <Corpo fontSize={14} fontWeight="600">
+              <YStack marginBottom={16} gap={8}>
+                <XStack justifyContent="space-between" gap={12}>
+                  <Corpo flex={1} fontSize={14} fontWeight="600">
                     Área dividida em talhões
                   </Corpo>
-                  <Corpo fontSize={14} fontWeight="700" color="verde">
+                  <Corpo fontSize={14} fontWeight="700">
                     {areaUsada.toLocaleString('pt-BR')} de {propriedade.areaTotal.toLocaleString('pt-BR')} ha
                   </Corpo>
                 </XStack>
-                <BarraProgresso valor={areaUsada / (propriedade.areaTotal || 1)} fundo="branco" />
-              </Cartao>
+                <BarraProgresso valor={areaUsada / (propriedade.areaTotal || 1)} />
+              </YStack>
             )}
 
-            <XStack alignItems="center" justifyContent="space-between" marginBottom={4}>
+            <XStack alignItems="center" justifyContent="space-between">
               <TituloSecao marginBottom={0}>Talhões</TituloSecao>
               <Botao
                 variante="texto"
@@ -198,17 +174,10 @@ export default function PropriedadeDetalhe() {
           />
         }
         renderItem={({ item }) => (
-          <Cartao marginBottom={10} padding={0} overflow="hidden">
-            <XStack alignItems="center" justifyContent="space-between" paddingVertical={10} paddingLeft={14} paddingRight={4} gap={12}>
-              <IconeLista icone="grid" />
-              <YStack flex={1}>
-                <Corpo fontSize={16} fontWeight="700">
-                  {item.nome}
-                </Corpo>
-                <Legenda marginTop={2}>
-                  {item.area} ha · gasto {formatarMoeda(totaisPorTalhao[item.id!] ?? 0)}
-                </Legenda>
-              </YStack>
+          <ItemLista
+            titulo={item.nome}
+            subtitulo={`${(item.area || 0).toLocaleString('pt-BR')} ha · gasto ${formatarMoeda(totaisPorTalhao[item.id!] ?? 0)}`}
+            direita={
               <MenuAcoes
                 titulo={item.nome}
                 rotulo={`Opções do talhão ${item.nome}`}
@@ -217,28 +186,28 @@ export default function PropriedadeDetalhe() {
                   { titulo: 'Excluir talhão', icone: 'trash-2', perigo: true, onPress: () => handleExcluirTalhao(item.id!) },
                 ]}
               />
-            </XStack>
-            <XStack borderTopWidth={1} borderTopColor="borda">
-              <AcaoTalhao
-                icone="list"
-                label="Despesas"
+            }
+          >
+            {/* marginLeft compensa o padding do botão de texto, para alinhar com o nome do talhão */}
+            <XStack marginTop={4} marginLeft={-8} flexWrap="wrap">
+              <Botao
+                variante="texto"
+                tamanho="sm"
+                titulo="Despesas"
                 onPress={() => navigation.navigate('DespesasLista', { propriedadeId, talhaoId: item.id, talhaoNome: item.nome })}
               />
-              <YStack width={1} backgroundColor="borda" />
-              <AcaoTalhao
-                icone="plus-circle"
-                label="Nova despesa"
+              <Botao
+                variante="texto"
+                tamanho="sm"
+                titulo="Nova despesa"
                 onPress={() => navigation.navigate('DespesaForm', { propriedadeId, talhaoId: item.id })}
               />
             </XStack>
-          </Cartao>
+          </ItemLista>
         )}
         ListFooterComponent={
-          <Cartao tom="bege" marginTop={12} gap={12}>
-            <YStack>
-              <Corpo fontWeight="600">Despesas da propriedade</Corpo>
-              <Legenda marginTop={2}>Lance gastos gerais ou consulte o histórico</Legenda>
-            </YStack>
+          <YStack marginTop={24} gap={12}>
+            <TituloSecao marginBottom={0}>Despesas da propriedade</TituloSecao>
             <XStack gap={8}>
               <Botao
                 flex={1}
@@ -250,13 +219,14 @@ export default function PropriedadeDetalhe() {
               />
               <Botao
                 flex={1}
+                variante={talhoes.length === 0 ? 'secundario' : 'primario'}
                 tamanho="sm"
                 icone="plus"
                 titulo="Nova despesa"
                 onPress={() => navigation.navigate('DespesaForm', { propriedadeId })}
               />
             </XStack>
-          </Cartao>
+          </YStack>
         }
       />
     </Tela>

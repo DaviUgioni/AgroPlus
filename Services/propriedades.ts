@@ -63,7 +63,7 @@ export async function excluirPropriedade(id: string) {
     doc(db, 'propriedades', id),
   ];
 
-  // Firestore batch limit 500 — chunk em lotes de 400
+
   for (let i = 0; i < allDocs.length; i += 400) {
     const chunk = allDocs.slice(i, i + 400);
     const batch = writeBatch(db);

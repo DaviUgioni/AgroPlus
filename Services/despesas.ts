@@ -1,15 +1,4 @@
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  getDocs,
-  getDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp,
+import {collection, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, query, where, orderBy, Timestamp,
 } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 import { invalidarResumo } from './cacheResumo';

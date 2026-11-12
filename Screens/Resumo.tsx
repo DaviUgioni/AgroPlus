@@ -19,6 +19,7 @@ import {
   Corpo,
   EstadoVazio,
   GraficoColunas,
+  ItemLista,
   Legenda,
   ListaEsqueleto,
   Tela,
@@ -153,7 +154,6 @@ export default function Resumo() {
         voltar={false}
         grande
         titulo="Resumo"
-        subtitulo="Seus números em um só lugar"
         direita={<Botao variante="contorno" tamanho="sm" icone="share-2" titulo="Planilha" carregando={exportando} onPress={handleExportar} />}
       />
 
@@ -182,7 +182,6 @@ export default function Resumo() {
           <Cartao
             tom="verde"
             interativo
-            padding={20}
             gap={4}
             onPress={() => navigation.navigate('ResumoDespesas', { periodo: periodo === 'ano' ? 'ano' : 'mes' })}
             accessibilityRole="button"
@@ -213,27 +212,31 @@ export default function Resumo() {
             ) : null}
           </Cartao>
 
-          <XStack gap={12} marginTop={12}>
-            <Cartao flex={1} gap={2}>
-              <Feather name="maximize" size={20} color={cores.verde} />
-              <Titulo fontSize={22} fontWeight="800" marginTop={6} numberOfLines={1} adjustsFontSizeToFit>
+          <XStack gap={12} marginTop={4}>
+            <YStack flex={1} paddingVertical={12} gap={2}>
+              <Titulo fontWeight="800" numberOfLines={1} adjustsFontSizeToFit>
                 {custoPorHa !== null ? formatarMoeda(custoPorHa) : '–'}
               </Titulo>
               <Legenda>por hectare ({dados.areaTotal.toLocaleString('pt-BR')} ha)</Legenda>
-            </Cartao>
-            <Cartao flex={1} interativo gap={2} onPress={() => navigation.navigate('Plantios')} accessibilityRole="button">
-              <Feather name="feather" size={20} color={cores.verde} />
-              <Titulo fontSize={22} fontWeight="800" marginTop={6}>
-                {dados.plantiosAtivos}
-              </Titulo>
+            </YStack>
+            <YStack width={1} backgroundColor="borda" marginVertical={12} />
+            <YStack
+              flex={1}
+              paddingVertical={12}
+              gap={2}
+              opacity="1 press:0.6"
+              onPress={() => navigation.navigate('Plantios')}
+              accessibilityRole="button"
+            >
+              <Titulo fontWeight="800">{dados.plantiosAtivos}</Titulo>
               <Legenda>{dados.plantiosAtivos === 1 ? 'plantio ativo' : 'plantios ativos'}</Legenda>
-            </Cartao>
+            </YStack>
           </XStack>
 
           {/* Gasto mês a mês */}
-          <Cartao marginTop={12} gap={10}>
+          <YStack marginTop={12} gap={12}>
             <YStack>
-              <Corpo fontWeight="700">Gasto por mês em {ano}</Corpo>
+              <TituloSecao marginBottom={0}>Gasto por mês em {ano}</TituloSecao>
               <Legenda marginTop={2}>
                 {MESES[mesGrafico].charAt(0).toUpperCase() + MESES[mesGrafico].slice(1)}: {formatarMoeda(calculos.porMes[mesGrafico])}
               </Legenda>
@@ -244,11 +247,11 @@ export default function Resumo() {
               aoTocar={setMesGrafico}
               dados={calculos.porMes.map((valor, i) => ({ rotulo: MESES[i].charAt(0).toUpperCase(), valor, destaque: i === mesGrafico }))}
             />
-          </Cartao>
+          </YStack>
 
           {/* Próximas colheitas */}
           {calculos.colheitas.length > 0 ? (
-            <Cartao marginTop={12} gap={14}>
+            <YStack marginTop={24}>
               <XStack alignItems="center" justifyContent="space-between">
                 <TituloSecao marginBottom={0}>Próximas colheitas</TituloSecao>
                 <Legenda fontWeight="700" color="verde" onPress={() => navigation.navigate('ResumoColheitas')} accessibilityRole="button" hitSlop={14}>
@@ -256,20 +259,14 @@ export default function Resumo() {
                 </Legenda>
               </XStack>
               {calculos.colheitas.slice(0, 4).map((c) => (
-                <YStack key={c.id} gap={6}>
-                  <XStack justifyContent="space-between" alignItems="baseline" gap={8}>
-                    <Corpo flex={1} fontWeight="700" numberOfLines={1}>
-                      {c.titulo}
-                    </Corpo>
-                    <Legenda fontWeight="700" color={c.pronto ? 'alerta' : 'verde'}>
-                      {c.texto}
-                    </Legenda>
-                  </XStack>
-                  <Legenda numberOfLines={1}>{c.local}</Legenda>
+                <ItemLista key={c.id} titulo={c.titulo} subtitulo={c.local}>
+                  <Legenda fontWeight="700" color={c.pronto ? 'alerta' : 'textoSec'} marginTop={2} marginBottom={6}>
+                    {c.texto}
+                  </Legenda>
                   <BarraProgresso valor={c.progresso} cor={c.pronto ? 'alerta' : 'verdeDestaque'} />
-                </YStack>
+                </ItemLista>
               ))}
-            </Cartao>
+            </YStack>
           ) : null}
         </ScrollView>
       )}

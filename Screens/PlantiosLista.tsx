@@ -90,7 +90,6 @@ export default function PlantiosLista({ embutido, propriedadeId: idEmbutido }: {
             const progresso = 1 - estimativa.diasRestantes / (item.diasParaColheita || 1);
             return (
               <ItemLista
-                icone="feather"
                 titulo={item.tipoNome}
                 subtitulo={`${item.talhaoNome ? `Talhão: ${item.talhaoNome}` : 'Propriedade toda'} · Plantado em ${item.dataPlantio.toDate().toLocaleDateString('pt-BR')}`}
                 direita={
@@ -107,7 +106,7 @@ export default function PlantiosLista({ embutido, propriedadeId: idEmbutido }: {
                 }
               >
                 <YStack marginTop={10} marginBottom={8} gap={2}>
-                  <Corpo fontSize={14} fontWeight="700" color={estimativa.pronto ? 'alerta' : 'verde'}>
+                  <Corpo fontSize={14} fontWeight="700" color={estimativa.pronto ? 'alerta' : 'textoSec'}>
                     {textoEstimativa(estimativa)}
                   </Corpo>
                   <Legenda>Colheita em {estimativa.dataPrevista.toLocaleDateString('pt-BR')}</Legenda>
